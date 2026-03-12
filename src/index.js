@@ -1,6 +1,14 @@
 const GITHUB_BASE = 'https://raw.githubusercontent.com/fedew04/OnePaceStremio/main';
 const TORBOX_API = 'https://api.torbox.app/v1';
 const VIDEO_EXTS = ['.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.webm'];
+const ANIME_TRACKERS = [
+  'http://nyaa.tracker.wf:7777/announce',
+  'http://anidex.moe:6969/announce',
+  'http://tracker.anirena.com:80/announce',
+  'udp://tracker.uw0.xyz:6969/announce',
+  'http://share.camoe.cn:8080/announce',
+  'http://t.nyaatracker.com:80/announce',
+];
 
 const MANIFEST = {
   id: 'com.onepace.torbox',
@@ -112,7 +120,7 @@ async function handleStream(episodeId, request, env, ctx) {
     })));
   }
 
-  const { infoHash, fileIdx } = streamData.streams[0];
+  const { infoHash, fileIdx = 0 } = streamData.streams[0];
   const host = new URL(request.url).origin;
 
   return new Response(JSON.stringify({
@@ -199,8 +207,10 @@ async function getTorrent(apiKey, torrentId) {
 }
 
 async function createTorrent(apiKey, infoHash) {
+  const trackerParams = ANIME_TRACKERS.map(t => `&tr=${encodeURIComponent(t)}`).join('');
+  const magnet = `magnet:?xt=urn:btih:${infoHash}${trackerParams}`;
   const body = new URLSearchParams({
-    magnet: `magnet:?xt=urn:btih:${infoHash}`,
+    magnet,
     allow_zip: 'false'
   });
   const res = await fetch(`${TORBOX_API}/api/torrents/createtorrent`, {
@@ -218,7 +228,7 @@ function getDownloadUrl(apiKey, torrentId, fileId) {
 // --- Status Helpers (mirrors torrentio/moch/torbox.js) ---
 
 function statusReady(torrent) {
-  return torrent?.download_present === true;
+  return !!torrent?.download_present;
 }
 
 function statusError(torrent) {
