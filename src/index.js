@@ -156,11 +156,14 @@ async function handleResolve(infoHash, fileIdx, env) {
       return new Response('Downloading to Torbox...', { status: 503 });
     }
 
-    const videos = (torrent.files || [])
+    const allFiles = torrent.files || [];
+    const videos = allFiles
       .filter(f => isVideo(f.short_name || f.name))
       .sort((a, b) => b.size - a.size);
 
-    const file = videos[fileIdx] ?? videos[0];
+    // fileIdx refers to the position in the torrent's natural file order, not the sorted list
+    const target = allFiles[fileIdx];
+    const file = (target && isVideo(target.short_name || target.name)) ? target : videos[0];
     if (!file) {
       return new Response('No video file found in torrent', { status: 404 });
     }
