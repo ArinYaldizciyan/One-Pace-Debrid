@@ -87,7 +87,7 @@ async function githubProxy(filePath, ctx) {
 
   const body = await response.text();
   ctx.waitUntil(cache.put(url, new Response(body, {
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' }
   })));
 
   return new Response(body, { headers: JSON_HEADERS });
@@ -116,7 +116,7 @@ async function handleStream(episodeId, request, env, ctx) {
     }
     streamData = await response.json();
     ctx.waitUntil(cache.put(url, new Response(JSON.stringify(streamData), {
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' }
     })));
   }
 
