@@ -15,24 +15,35 @@ Stremio → /stream/series/SAB_1.json → GitHub (cached 24h) → {infoHash, fil
        → /resolve/{infoHash}/0       → Torbox API          → 302 redirect to CDN
 ```
 
+## Key Finding: Torrent IS Available
+
+The user confirmed that manually adding this infoHash to Torbox works fine. This **rules out** torrent availability as the root cause. The issue is in the **API interaction between the worker and Torbox**, not the torrent itself.
+
+---
+
+## Torbox API Analysis
+
+We verified the Torbox SDK source code. The API uses **snake_case** field names (`download_present`, `torrent_id`, `download_state`, etc.) — matching the worker code. Field naming is **not** the issue.
+
+However, potential API behavior changes to investigate:
+- `createTorrent` may now return `queued_id` in cases where it previously returned `torrent_id`
+- The `checkcached` endpoint exists (`/api/torrents/checkcached`) but is not used — the worker calls the full `mylist` endpoint instead, which is inefficient and may behave differently
+- New parameters like `as_queued` in `createTorrent` could change queueing behavior
+
 ---
 
 ## Potential Causes (Ranked by Likelihood)
 
-### 1. Torrent Not Available on Torbox (HIGH)
+### 1. Torbox API Behavior Change (HIGH — NEEDS LOGS TO CONFIRM)
 
-The most likely cause. When the torrent isn't cached by Torbox, the resolve flow returns HTTP 503, which Stremio displays as "Loading failed" with no retry mechanism.
+The `createTorrent` response may have changed. The worker checks `created.data?.torrent_id` to determine if Torbox had the torrent cached. If the API now:
+- Returns `queued_id` instead of `torrent_id` for cached torrents
+- Wraps `data` differently
+- Returns a different response structure for already-existing torrents
 
-**What happens:**
-1. `findTorrent()` → null (torrent not in user's Torbox list)
-2. `createTorrent()` → Torbox starts downloading
-3. If Torbox doesn't have it cached: returns `503 "Adding to Torbox, try again shortly"`
-4. Stremio shows "Loading failed" — user is stuck
+...the worker would always fall into the "Queued for download" path (503), even when the torrent is immediately available.
 
-**Why this hits SAB specifically:**
-- This is an 11-episode multi-file torrent (larger download)
-- Larger torrents take longer to cache and are more likely to fail
-- One Pace torrents may have few seeders, making Torbox caching unreliable
+**Logging deployed to capture**: `createTorrent` full response including `torrent_id`, `queued_id`, `hash`, `error`, and `detail`.
 
 ### 2. Error State Infinite Loop (HIGH)
 
@@ -51,7 +62,9 @@ Next request → findTorrent() → finds errored torrent again → same loop
 const matches = data.data.filter(t => t.hash === infoHash);
 return matches.find(t => !statusError(t)) || matches[0] || null;
 ```
-It prefers non-error torrents, but if only the errored one exists (the newly created one hasn't appeared in the list yet due to API lag), it picks the error torrent every time. The `createTorrent` in the error path doesn't clean up or delete the old errored torrent.
+It prefers non-error torrents, but if only the errored one exists (the newly created one hasn't appeared in the list yet due to API lag), it picks the error torrent every time.
+
+**Logging deployed to capture**: Each match's `active`, `download_finished`, `download_present`, `download_state`, and computed `statusError`/`statusReady` values.
 
 ### 3. Null Torrent After `getTorrent` Failure (MEDIUM)
 
@@ -66,89 +79,84 @@ if (created.data?.torrent_id) {
 if (statusError(torrent)) { ... }  // statusError(null) → true!
 ```
 
-`statusError(null)` evaluates to `true` because `(!undefined && !undefined)` → `true`. This triggers unnecessary error recovery and returns 503.
+`statusError(null)` evaluates to `true` because `(!undefined && !undefined)` is `true`. This triggers unnecessary error recovery and returns 503.
 
-### 4. fileIdx=0 Points to Non-Video File (MEDIUM)
+**Fix deployed**: The instrumented code now returns 503 with a specific message when `getTorrent` returns null after create, preventing the null from reaching `statusError`.
 
-In a multi-file torrent, index 0 might be a non-video file (e.g., `.nfo`, `.txt`, `.srt`). The fallback logic:
+### 4. `createTorrent` Silent API Failures (MEDIUM)
 
-```javascript
-const target = allFiles[fileIdx];  // allFiles[0] might be .nfo
-const file = (target && isVideo(target.short_name || target.name)) ? target : videos[0];
-```
+The `createTorrent` function doesn't validate the API response. If Torbox returns `{success: false, error: "Rate limit exceeded"}`, the code treats it as "queued for download" and returns 503.
 
-**Two outcomes:**
-- If non-video files exist at index 0: falls back to `videos[0]` (the **largest** video), which is likely the **wrong episode** (maybe episode 11 instead of episode 1)
-- If no video files at all: returns `404 "No video file found"`
+**Logging deployed to capture**: Full `createTorrent` response including `success`, `error`, and `detail`.
 
-This wouldn't cause "Loading failed" per se — it would play the wrong episode. But it's worth verifying.
+### 5. fileIdx=0 Points to Non-Video File (MEDIUM)
 
-### 5. Stale Cache Serving Dead infoHash (MEDIUM)
+In a multi-file torrent, index 0 might be a non-video file (e.g., `.nfo`, `.txt`). This wouldn't cause "Loading failed" but would play the **wrong episode**.
 
-The worker caches GitHub data for 24 hours. If the upstream `SAB_1.json` was updated with a new infoHash (e.g., torrent was re-released), the worker would serve the old, dead infoHash for up to 24 hours.
+**Logging deployed to capture**: All files in the torrent with their index, name, and size.
 
-**Evidence this could be happening:**
-- Cache TTL was recently increased from 1 hour to 24 hours (commit `7b56ab5`)
-- No cache invalidation mechanism exists
-- No way to force-purge the cache
+### 6. Stale Cache Serving Dead infoHash (LOW)
 
-### 6. `createTorrent` Silent API Failures (LOW-MEDIUM)
-
-The `createTorrent` function doesn't validate the API response:
-
-```javascript
-async function createTorrent(apiKey, infoHash) {
-  // ...
-  const res = await fetch(`${TORBOX_API}/api/torrents/createtorrent`, { ... });
-  return res.json();  // No check for success/error!
-}
-```
-
-If Torbox returns `{success: false, error: "Rate limit exceeded"}`, the code treats it as "queued for download" and returns 503. The user has no idea the API call failed.
-
-### 7. `findTorrent` Performance Bottleneck (LOW)
-
-`findTorrent` fetches the **entire torrent list** (`/api/torrents/mylist`) every request, then filters by hash. If the Torbox account has many torrents:
-- Large response → slow parsing
-- Could hit Cloudflare Worker CPU limits (30ms free tier, 50ms paid)
-- Could hit Torbox API rate limits
+The worker caches GitHub data for 24 hours. If upstream data changed, old infoHash could be served. However, the user confirmed the torrent hash works manually, so this is less likely the current issue.
 
 ---
 
-## Architectural Issues
+## What Was Deployed
 
-### No Observability
-The worker has zero logging or metrics beyond `console.error` for caught exceptions. The user's complaint "I cannot debug it since I don't have logs on the Cloudflare worker" confirms this is a fundamental gap. There's no way to determine which specific failure path is being hit.
+### Structured Logging (LIVE on `op` worker)
 
-### No Retry Mechanism
-When `/resolve/` returns 503, Stremio shows "Loading failed" immediately. There's no:
-- Client-side retry with backoff
-- "Try again" button or messaging
-- Progress indication for downloading torrents
+Every step of the resolve flow now logs to `console.log` with a request ID prefix (`[reqId]`):
 
-### Generic Error Responses
-All 503 responses are plain text with no structured error info:
-- `"Adding to Torbox, try again shortly"` — which step failed?
-- `"Torrent error, retrying. Try again shortly"` — what error?
-- `"Downloading to Torbox..."` — how long will it take?
+| Log Point | What It Captures |
+|-----------|-----------------|
+| `STREAM` | episodeId, cache hit/miss, infoHash, fileIdx, host |
+| `RESOLVE START` | infoHash, fileIdx |
+| `findTorrent` | API status, success, data shape, match count, each match's state |
+| `createTorrent` | API status, success, torrent_id, queued_id, error, detail |
+| `getTorrent` | API status, success, torrent state |
+| `Torrent state` | id, hash, active, download_finished, download_present, download_state |
+| `Files` | Total count, video count, each file's idx/id/name/size |
+| `RESULT` | Final outcome (302/503/404/500) with details |
 
-### Cache Cannot Be Invalidated
-No mechanism exists to purge the Cloudflare cache. If stale data causes issues, the only fix is waiting 24 hours or redeploying the worker.
+### How to View Logs
+
+1. **Cloudflare Dashboard**: Workers & Pages → `op` → Logs tab
+2. **CLI**: `npx wrangler tail op` (streams real-time logs)
 
 ---
 
-## Recommendations (Investigation Only — No Implementation)
+## Cloudflare MCP Observability Permissions
 
-1. **Add structured logging** — Log every step of the resolve flow with the infoHash, fileIdx, torrent state, and API responses. Use `console.log` for Cloudflare's dashboard or integrate with a logging service.
+The current MCP API token can manage worker scripts but **cannot** access the Workers Observability/Telemetry API (returns auth error 10000).
 
-2. **Handle null torrent after getTorrent** — Check for null before calling `statusError()`.
+### To enable programmatic log querying, add these permissions to the API token:
 
-3. **Break the error loop** — Delete errored torrents before re-creating, or track retry count.
+1. Go to **Cloudflare Dashboard** → **My Profile** → **API Tokens**
+2. Edit the token used by the MCP server
+3. Add these permissions:
+   - **Account** → **Workers Tail** → **Read** (for `wrangler tail` and tail API)
+   - **Account** → **Account Analytics** → **Read** (for observability/telemetry queries)
+   - **Account** → **Logs** → **Edit** (for logpush configuration, optional)
 
-4. **Validate createTorrent response** — Check `created.success` and surface API errors.
+After updating the token, the MCP will be able to run queries like:
+```
+POST /accounts/{account_id}/workers/observability/telemetry/query
+```
+to search historical logs, filter by request ID, and analyze error patterns programmatically.
 
-5. **Add a health-check/debug endpoint** — e.g., `/debug/resolve/{infoHash}/{fileIdx}` that returns JSON with the full torrent state instead of a redirect.
+---
 
-6. **Consider cache busting** — Add a query param or versioned URL to allow manual cache invalidation.
+## Infrastructure Notes
 
-7. **Verify fileIdx=0 mapping** — Check the actual Torbox file list for this torrent to confirm index 0 is indeed the correct video file.
+- **Worker name mismatch**: `wrangler.toml` says `name = "one-pace-torbox"` but the deployed worker is `op`. Keep as `op` since Stremio clients reference this URL.
+- **Worker URL**: `https://op.one-pace-torbox.workers.dev`
+- **Torbox API version**: Using `/v1/` — no deprecation notices found, but monitor for changes.
+
+---
+
+## Next Steps
+
+1. **Reproduce the failure** on episode 20x1 and check the Cloudflare Logs tab for the detailed trace
+2. **Identify which code path** the request takes (the logs will show exactly where it fails)
+3. **Fix the root cause** based on log evidence
+4. **Update MCP token permissions** to enable programmatic log queries for future debugging
