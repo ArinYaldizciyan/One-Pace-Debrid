@@ -36,6 +36,55 @@ const JSON_HEADERS = {
   'Access-Control-Allow-Headers': '*'
 };
 
+const CONFIG_PAGE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Pace (Torbox) - Configure</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; background: #1a1a2e; color: #eee; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: #16213e; border-radius: 12px; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    p { color: #aaa; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.4rem; color: #ccc; }
+    input { width: 100%; padding: 0.7rem; border-radius: 6px; border: 1px solid #333; background: #0f3460; color: #eee; font-size: 0.95rem; }
+    button { width: 100%; padding: 0.7rem; border-radius: 6px; border: none; background: #e94560; color: #fff; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
+    button:hover { background: #c73e54; }
+    .result { margin-top: 1rem; display: none; }
+    .result a { color: #53d8fb; word-break: break-all; }
+    .result code { display: block; background: #0f3460; padding: 0.6rem; border-radius: 6px; margin-top: 0.5rem; font-size: 0.8rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>One Pace (Torbox)</h1>
+    <p>Enter your Torbox API key to generate your personal addon URL. Your key is never stored on this server — it becomes part of your unique URL.</p>
+    <label for="apikey">Torbox API Key</label>
+    <input type="text" id="apikey" placeholder="Paste your Torbox API key here">
+    <button onclick="generate()">Install</button>
+    <div class="result" id="result">
+      <label>Your addon URL:</label>
+      <code id="url"></code>
+      <br>
+      <a id="install" href="#">Click here to install in Stremio</a>
+    </div>
+  </div>
+  <script>
+    function generate() {
+      const key = document.getElementById('apikey').value.trim();
+      if (!key) return;
+      const base = location.origin + '/' + encodeURIComponent(key);
+      const manifest = base + '/manifest.json';
+      document.getElementById('url').textContent = manifest;
+      document.getElementById('install').href = 'stremio://' + manifest.replace(/^https?:\\/\\//, '');
+      document.getElementById('result').style.display = 'block';
+    }
+  </script>
+</body>
+</html>`;
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -45,26 +94,42 @@ export default {
       return new Response(null, { headers: JSON_HEADERS });
     }
 
-    if (path === '/manifest.json') {
+    // --- Unauthenticated routes ---
+
+    if (path === '/' || path === '/configure') {
+      return new Response(CONFIG_PAGE, { headers: { 'Content-Type': 'text/html', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
+    }
+
+    // --- Authenticated routes: /{apiKey}/... ---
+
+    const authMatch = path.match(/^\/([^/]+)(\/.*)?$/);
+    if (!authMatch) {
+      return new Response('Not Found', { status: 404 });
+    }
+
+    const apiKey = authMatch[1];
+    const subPath = authMatch[2] || '/';
+
+    if (subPath === '/manifest.json') {
       return new Response(JSON.stringify(MANIFEST), { headers: JSON_HEADERS });
     }
 
-    if (path === '/catalog/series/seriesCatalog.json') {
+    if (subPath === '/catalog/series/seriesCatalog.json') {
       return githubProxy('catalog/series/seriesCatalog.json', ctx);
     }
 
-    if (path === '/meta/series/pp_onepace.json') {
+    if (subPath === '/meta/series/pp_onepace.json') {
       return githubProxy('meta/series/pp_onepace.json', ctx);
     }
 
-    const streamMatch = path.match(/^\/stream\/series\/(.+)\.json$/);
+    const streamMatch = subPath.match(/^\/stream\/series\/(.+)\.json$/);
     if (streamMatch) {
-      return handleStream(streamMatch[1], request, env, ctx);
+      return handleStream(streamMatch[1], apiKey, request, ctx);
     }
 
-    const resolveMatch = path.match(/^\/resolve\/([a-f0-9]+)\/(\d+)$/i);
+    const resolveMatch = subPath.match(/^\/resolve\/([a-f0-9]+)\/(\d+)$/i);
     if (resolveMatch) {
-      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), env);
+      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), apiKey);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -101,7 +166,7 @@ function addCorsHeaders(response) {
 
 // --- Stream Handler ---
 
-async function handleStream(episodeId, request, env, ctx) {
+async function handleStream(episodeId, apiKey, request, ctx) {
   const url = `${GITHUB_BASE}/stream/series/${episodeId}.json`;
   const cache = caches.default;
   let streamData;
@@ -132,23 +197,17 @@ async function handleStream(episodeId, request, env, ctx) {
     streams: [{
       name: 'One Pace\n[Torbox]',
       title: episodeId,
-      url: `${host}/resolve/${infoHash}/${fileIdx}`
+      url: `${host}/${apiKey}/resolve/${infoHash}/${fileIdx}`
     }]
   }), { headers: JSON_HEADERS });
 }
 
 // --- Resolve Handler ---
 
-async function handleResolve(infoHash, fileIdx, env) {
-  const apiKey = env.TORBOX_API_KEY;
+async function handleResolve(infoHash, fileIdx, apiKey) {
   const reqId = crypto.randomUUID().slice(0, 8);
 
   console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
-
-  if (!apiKey) {
-    console.log(`[${reqId}] ERROR: TORBOX_API_KEY not configured`);
-    return new Response('TORBOX_API_KEY not configured', { status: 500 });
-  }
 
   try {
     let torrent = await findTorrent(apiKey, infoHash, reqId);
@@ -159,7 +218,6 @@ async function handleResolve(infoHash, fileIdx, env) {
       console.log(`[${reqId}] createTorrent response: success=${created.success} torrent_id=${created.data?.torrent_id} queued_id=${created.data?.queued_id} error=${JSON.stringify(created.error)} detail=${created.detail}`);
 
       if (created.data?.torrent_id) {
-        // Torbox had it cached — fetch it immediately and fall through to resolve
         console.log(`[${reqId}] Torbox cached, fetching torrent_id=${created.data.torrent_id}`);
         torrent = await getTorrent(apiKey, created.data.torrent_id, reqId);
         if (!torrent) {
@@ -167,7 +225,6 @@ async function handleResolve(infoHash, fileIdx, env) {
           return new Response('Failed to fetch newly created torrent', { status: 503 });
         }
       } else {
-        // Queued for download, not instantly available
         console.log(`[${reqId}] RESULT: 503 - Queued for download`);
         return new Response('Adding to Torbox, try again shortly', { status: 503 });
       }
@@ -197,12 +254,14 @@ async function handleResolve(infoHash, fileIdx, env) {
       console.log(`[${reqId}] All files: ${JSON.stringify(allFiles.map((f, i) => ({ idx: i, id: f.id, name: f.short_name || f.name, size: f.size })))}`);
     }
 
-    // fileIdx refers to the position in the torrent's natural file order, not the sorted list
     const target = allFiles[fileIdx];
     const file = (target && isVideo(target.short_name || target.name)) ? target : videos[0];
 
     if (target && !isVideo(target.short_name || target.name)) {
       console.log(`[${reqId}] WARNING: fileIdx=${fileIdx} is not a video (${target.short_name || target.name}), falling back to largest video`);
+    }
+    if (!target) {
+      console.log(`[${reqId}] WARNING: fileIdx=${fileIdx} out of bounds (${allFiles.length} files), falling back to largest video`);
     }
 
     if (!file) {
@@ -210,9 +269,31 @@ async function handleResolve(infoHash, fileIdx, env) {
       return new Response('No video file found in torrent', { status: 404 });
     }
 
-    const dlUrl = getDownloadUrl(apiKey, torrent.id, file.id);
-    console.log(`[${reqId}] RESULT: 302 - Redirecting to download torrent_id=${torrent.id} file_id=${file.id} file_name=${file.short_name || file.name}`);
-    return Response.redirect(dlUrl, 302);
+    // Fetch the download URL server-side to avoid leaking the API key
+    const torboxUrl = getDownloadUrl(apiKey, torrent.id, file.id);
+    console.log(`[${reqId}] Fetching download URL server-side: torrent_id=${torrent.id} file_id=${file.id} file_name=${file.short_name || file.name}`);
+
+    const dlRes = await fetch(torboxUrl, { redirect: 'manual' });
+    const cdnUrl = dlRes.headers.get('Location');
+
+    console.log(`[${reqId}] Torbox requestdl response: status=${dlRes.status} hasLocation=${!!cdnUrl}`);
+
+    if (cdnUrl) {
+      console.log(`[${reqId}] RESULT: 302 - Redirecting to CDN`);
+      return Response.redirect(cdnUrl, 302);
+    }
+
+    // If no redirect, try parsing JSON response for download link
+    const dlData = await dlRes.json();
+    console.log(`[${reqId}] Torbox requestdl JSON: success=${dlData.success} hasData=${!!dlData.data} error=${JSON.stringify(dlData.error)} detail=${dlData.detail}`);
+
+    if (dlData.data) {
+      console.log(`[${reqId}] RESULT: 302 - Redirecting via JSON data`);
+      return Response.redirect(dlData.data, 302);
+    }
+
+    console.log(`[${reqId}] RESULT: 502 - Could not resolve download link`);
+    return new Response('Could not resolve download link', { status: 502 });
 
   } catch (err) {
     console.error(`[${reqId}] RESOLVE ERROR:`, err.message, err.stack);
@@ -230,7 +311,7 @@ async function findTorrent(apiKey, infoHash, reqId = '-') {
   console.log(`[${reqId}] findTorrent: status=${res.status} success=${data.success} isArray=${Array.isArray(data.data)} count=${Array.isArray(data.data) ? data.data.length : 'N/A'} error=${JSON.stringify(data.error)} detail=${data.detail}`);
 
   if (!data.success || !Array.isArray(data.data)) {
-    console.log(`[${reqId}] findTorrent: API returned non-success or non-array data. Raw keys: ${data.data ? Object.keys(data.data) : 'null'}`);
+    console.log(`[${reqId}] findTorrent: API returned non-success or non-array data`);
     return null;
   }
 
