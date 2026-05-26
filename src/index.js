@@ -105,13 +105,16 @@ async function handleStream(episodeId, request, env, ctx) {
   const url = `${GITHUB_BASE}/stream/series/${episodeId}.json`;
   const cache = caches.default;
   let streamData;
+  let fromCache = false;
 
   const cached = await cache.match(url);
   if (cached) {
     streamData = await cached.json();
+    fromCache = true;
   } else {
     const response = await fetch(url);
     if (!response.ok) {
+      console.log(`STREAM: episodeId=${episodeId} github_status=${response.status} - returning empty streams`);
       return new Response(JSON.stringify({ streams: [] }), { headers: JSON_HEADERS });
     }
     streamData = await response.json();
@@ -122,6 +125,8 @@ async function handleStream(episodeId, request, env, ctx) {
 
   const { infoHash, fileIdx = 0 } = streamData.streams[0];
   const host = new URL(request.url).origin;
+
+  console.log(`STREAM: episodeId=${episodeId} cached=${fromCache} infoHash=${infoHash} fileIdx=${fileIdx} host=${host}`);
 
   return new Response(JSON.stringify({
     streams: [{
@@ -136,31 +141,49 @@ async function handleStream(episodeId, request, env, ctx) {
 
 async function handleResolve(infoHash, fileIdx, env) {
   const apiKey = env.TORBOX_API_KEY;
+  const reqId = crypto.randomUUID().slice(0, 8);
+
+  console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
 
   if (!apiKey) {
+    console.log(`[${reqId}] ERROR: TORBOX_API_KEY not configured`);
     return new Response('TORBOX_API_KEY not configured', { status: 500 });
   }
 
   try {
-    let torrent = await findTorrent(apiKey, infoHash);
+    let torrent = await findTorrent(apiKey, infoHash, reqId);
 
     if (!torrent) {
-      const created = await createTorrent(apiKey, infoHash);
+      console.log(`[${reqId}] Torrent not found in list, creating...`);
+      const created = await createTorrent(apiKey, infoHash, reqId);
+      console.log(`[${reqId}] createTorrent response: success=${created.success} torrent_id=${created.data?.torrent_id} queued_id=${created.data?.queued_id} error=${JSON.stringify(created.error)} detail=${created.detail}`);
+
       if (created.data?.torrent_id) {
         // Torbox had it cached — fetch it immediately and fall through to resolve
-        torrent = await getTorrent(apiKey, created.data.torrent_id);
+        console.log(`[${reqId}] Torbox cached, fetching torrent_id=${created.data.torrent_id}`);
+        torrent = await getTorrent(apiKey, created.data.torrent_id, reqId);
+        if (!torrent) {
+          console.log(`[${reqId}] ERROR: getTorrent returned null after create`);
+          return new Response('Failed to fetch newly created torrent', { status: 503 });
+        }
       } else {
         // Queued for download, not instantly available
+        console.log(`[${reqId}] RESULT: 503 - Queued for download`);
         return new Response('Adding to Torbox, try again shortly', { status: 503 });
       }
     }
 
+    console.log(`[${reqId}] Torrent state: id=${torrent.id} hash=${torrent.hash} active=${torrent.active} download_finished=${torrent.download_finished} download_present=${torrent.download_present} download_state=${torrent.download_state} files_count=${torrent.files?.length}`);
+
     if (statusError(torrent)) {
-      await createTorrent(apiKey, infoHash);
+      console.log(`[${reqId}] Torrent in error state, re-creating...`);
+      await createTorrent(apiKey, infoHash, reqId);
+      console.log(`[${reqId}] RESULT: 503 - Torrent error`);
       return new Response('Torrent error, retrying. Try again shortly', { status: 503 });
     }
 
     if (!statusReady(torrent)) {
+      console.log(`[${reqId}] RESULT: 503 - Still downloading`);
       return new Response('Downloading to Torbox...', { status: 503 });
     }
 
@@ -169,44 +192,75 @@ async function handleResolve(infoHash, fileIdx, env) {
       .filter(f => isVideo(f.short_name || f.name))
       .sort((a, b) => b.size - a.size);
 
+    console.log(`[${reqId}] Files: total=${allFiles.length} videos=${videos.length} fileIdx=${fileIdx}`);
+    if (allFiles.length > 0) {
+      console.log(`[${reqId}] All files: ${JSON.stringify(allFiles.map((f, i) => ({ idx: i, id: f.id, name: f.short_name || f.name, size: f.size })))}`);
+    }
+
     // fileIdx refers to the position in the torrent's natural file order, not the sorted list
     const target = allFiles[fileIdx];
     const file = (target && isVideo(target.short_name || target.name)) ? target : videos[0];
+
+    if (target && !isVideo(target.short_name || target.name)) {
+      console.log(`[${reqId}] WARNING: fileIdx=${fileIdx} is not a video (${target.short_name || target.name}), falling back to largest video`);
+    }
+
     if (!file) {
+      console.log(`[${reqId}] RESULT: 404 - No video file found`);
       return new Response('No video file found in torrent', { status: 404 });
     }
 
-    return Response.redirect(getDownloadUrl(apiKey, torrent.id, file.id), 302);
+    const dlUrl = getDownloadUrl(apiKey, torrent.id, file.id);
+    console.log(`[${reqId}] RESULT: 302 - Redirecting to download torrent_id=${torrent.id} file_id=${file.id} file_name=${file.short_name || file.name}`);
+    return Response.redirect(dlUrl, 302);
 
   } catch (err) {
-    console.error('Resolve error:', err);
+    console.error(`[${reqId}] RESOLVE ERROR:`, err.message, err.stack);
     return new Response('Internal error', { status: 500 });
   }
 }
 
 // --- Torbox API ---
 
-async function findTorrent(apiKey, infoHash) {
+async function findTorrent(apiKey, infoHash, reqId = '-') {
   const res = await fetch(`${TORBOX_API}/api/torrents/mylist?bypass_cache=true`, {
     headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' }
   });
   const data = await res.json();
-  if (!data.success || !Array.isArray(data.data)) return null;
+  console.log(`[${reqId}] findTorrent: status=${res.status} success=${data.success} isArray=${Array.isArray(data.data)} count=${Array.isArray(data.data) ? data.data.length : 'N/A'} error=${JSON.stringify(data.error)} detail=${data.detail}`);
+
+  if (!data.success || !Array.isArray(data.data)) {
+    console.log(`[${reqId}] findTorrent: API returned non-success or non-array data. Raw keys: ${data.data ? Object.keys(data.data) : 'null'}`);
+    return null;
+  }
 
   const matches = data.data.filter(t => t.hash === infoHash);
+  console.log(`[${reqId}] findTorrent: ${matches.length} hash matches for ${infoHash}`);
+  if (matches.length > 0) {
+    matches.forEach((t, i) => {
+      console.log(`[${reqId}] findTorrent match[${i}]: id=${t.id} active=${t.active} download_finished=${t.download_finished} download_present=${t.download_present} download_state=${t.download_state} statusError=${statusError(t)} statusReady=${statusReady(t)}`);
+    });
+  }
+
   return matches.find(t => !statusError(t)) || matches[0] || null;
 }
 
-async function getTorrent(apiKey, torrentId) {
+async function getTorrent(apiKey, torrentId, reqId = '-') {
   const res = await fetch(`${TORBOX_API}/api/torrents/mylist?id=${torrentId}&bypass_cache=true`, {
     headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' }
   });
   const data = await res.json();
+  console.log(`[${reqId}] getTorrent: status=${res.status} success=${data.success} torrentId=${torrentId} isArray=${Array.isArray(data.data)} error=${JSON.stringify(data.error)}`);
+
   if (!data.success) return null;
-  return Array.isArray(data.data) ? data.data[0] : data.data;
+  const torrent = Array.isArray(data.data) ? data.data[0] : data.data;
+  if (torrent) {
+    console.log(`[${reqId}] getTorrent result: id=${torrent.id} hash=${torrent.hash} active=${torrent.active} download_present=${torrent.download_present} download_state=${torrent.download_state} files=${torrent.files?.length}`);
+  }
+  return torrent;
 }
 
-async function createTorrent(apiKey, infoHash) {
+async function createTorrent(apiKey, infoHash, reqId = '-') {
   const trackerParams = ANIME_TRACKERS.map(t => `&tr=${encodeURIComponent(t)}`).join('');
   const magnet = `magnet:?xt=urn:btih:${infoHash}${trackerParams}`;
   const body = new URLSearchParams({
@@ -218,7 +272,9 @@ async function createTorrent(apiKey, infoHash) {
     headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' },
     body
   });
-  return res.json();
+  const result = await res.json();
+  console.log(`[${reqId}] createTorrent: status=${res.status} success=${result.success} torrent_id=${result.data?.torrent_id} queued_id=${result.data?.queued_id} hash=${result.data?.hash} error=${JSON.stringify(result.error)} detail=${result.detail}`);
+  return result;
 }
 
 function getDownloadUrl(apiKey, torrentId, fileId) {
