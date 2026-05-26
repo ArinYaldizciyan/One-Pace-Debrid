@@ -78,7 +78,7 @@ const CONFIG_PAGE = `<!DOCTYPE html>
       const base = location.origin + '/' + encodeURIComponent(key);
       const manifest = base + '/manifest.json';
       document.getElementById('url').textContent = manifest;
-      document.getElementById('install').href = 'stremio://' + manifest.replace(/^https?:\\/\\//, '');
+      document.getElementById('install').href = 'stremio://' + manifest.replace('https://', '').replace('http://', '');
       document.getElementById('result').style.display = 'block';
     }
   </script>
