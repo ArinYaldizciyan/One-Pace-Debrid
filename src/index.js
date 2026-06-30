@@ -129,7 +129,7 @@ export default {
 
     const resolveMatch = subPath.match(/^\/resolve\/([a-f0-9]+)\/(\d+)$/i);
     if (resolveMatch) {
-      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), apiKey);
+      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), apiKey, ctx);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -204,7 +204,7 @@ async function handleStream(episodeId, apiKey, request, ctx) {
 
 // --- Resolve Handler ---
 
-async function handleResolve(infoHash, fileIdx, apiKey) {
+async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
   const reqId = crypto.randomUUID().slice(0, 8);
 
   console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
@@ -268,6 +268,11 @@ async function handleResolve(infoHash, fileIdx, apiKey) {
       console.log(`[${reqId}] RESULT: 404 - No video file found`);
       return new Response('No video file found in torrent', { status: 404 });
     }
+
+    // Warm the next episode's CDN link in the background (no added latency)
+    ctx?.waitUntil(prefetchNextEpisode({
+      apiKey, infoHash, torrent, fileIdx, cache: caches.default, fetchImpl: fetch, reqId,
+    }));
 
     // Fetch the download URL server-side to avoid leaking the API key
     const torboxUrl = getDownloadUrl(apiKey, torrent.id, file.id);
@@ -374,4 +379,47 @@ function statusError(torrent) {
 
 function isVideo(filename = '') {
   return VIDEO_EXTS.some(ext => filename.toLowerCase().endsWith(ext));
+}
+
+export function computeNextFile(torrent, fileIdx) {
+  const allFiles = torrent?.files || [];
+  const nextIdx = fileIdx + 1;
+  if (nextIdx >= allFiles.length) {
+    return { skip: 'boundary', nextIdx };
+  }
+  const nextFile = allFiles[nextIdx];
+  if (!isVideo(nextFile.short_name || nextFile.name)) {
+    return { skip: 'non-video', nextIdx, nextFile };
+  }
+  return { skip: null, nextIdx, nextFile };
+}
+
+export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, cache, fetchImpl = fetch, reqId = '-' }) {
+  try {
+    const { skip, nextIdx, nextFile } = computeNextFile(torrent, fileIdx);
+    if (skip) {
+      console.log(`[${reqId}] PREFETCH: skip reason=${skip} nextIdx=${nextIdx}`);
+      return;
+    }
+
+    const markerUrl = `https://prefetch.local/${infoHash}/${nextIdx}`;
+    if (await cache.match(markerUrl)) {
+      console.log(`[${reqId}] PREFETCH: skip reason=already-warmed nextIdx=${nextIdx}`);
+      return;
+    }
+    await cache.put(markerUrl, new Response('1', { headers: { 'Cache-Control': 'max-age=300' } }));
+
+    const torboxUrl = getDownloadUrl(apiKey, torrent.id, nextFile.id);
+    const dlRes = await fetchImpl(torboxUrl, { redirect: 'manual' });
+    const cdnUrl = dlRes.headers.get('Location');
+    if (!cdnUrl) {
+      console.log(`[${reqId}] PREFETCH: no CDN location for nextIdx=${nextIdx}`);
+      return;
+    }
+
+    const warmRes = await fetchImpl(cdnUrl, { headers: { Range: 'bytes=0-0' } });
+    console.log(`[${reqId}] PREFETCH: warmed nextIdx=${nextIdx} file=${nextFile.short_name || nextFile.name} status=${warmRes.status}`);
+  } catch (err) {
+    console.log(`[${reqId}] PREFETCH ERROR: ${err.message}`);
+  }
 }
