@@ -375,3 +375,16 @@ function statusError(torrent) {
 function isVideo(filename = '') {
   return VIDEO_EXTS.some(ext => filename.toLowerCase().endsWith(ext));
 }
+
+export function computeNextFile(torrent, fileIdx) {
+  const allFiles = torrent?.files || [];
+  const nextIdx = fileIdx + 1;
+  if (nextIdx >= allFiles.length) {
+    return { skip: 'boundary', nextIdx };
+  }
+  const nextFile = allFiles[nextIdx];
+  if (!isVideo(nextFile.short_name || nextFile.name)) {
+    return { skip: 'non-video', nextIdx, nextFile };
+  }
+  return { skip: null, nextIdx, nextFile };
+}
