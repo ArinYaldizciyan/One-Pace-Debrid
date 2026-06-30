@@ -129,7 +129,7 @@ export default {
 
     const resolveMatch = subPath.match(/^\/resolve\/([a-f0-9]+)\/(\d+)$/i);
     if (resolveMatch) {
-      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), apiKey);
+      return handleResolve(resolveMatch[1].toLowerCase(), parseInt(resolveMatch[2]), apiKey, ctx);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -204,7 +204,7 @@ async function handleStream(episodeId, apiKey, request, ctx) {
 
 // --- Resolve Handler ---
 
-async function handleResolve(infoHash, fileIdx, apiKey) {
+async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
   const reqId = crypto.randomUUID().slice(0, 8);
 
   console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
@@ -268,6 +268,11 @@ async function handleResolve(infoHash, fileIdx, apiKey) {
       console.log(`[${reqId}] RESULT: 404 - No video file found`);
       return new Response('No video file found in torrent', { status: 404 });
     }
+
+    // Warm the next episode's CDN link in the background (no added latency)
+    ctx?.waitUntil(prefetchNextEpisode({
+      apiKey, infoHash, torrent, fileIdx, cache: caches.default, fetchImpl: fetch, reqId,
+    }));
 
     // Fetch the download URL server-side to avoid leaking the API key
     const torboxUrl = getDownloadUrl(apiKey, torrent.id, file.id);
