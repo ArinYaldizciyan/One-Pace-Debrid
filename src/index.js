@@ -388,3 +388,33 @@ export function computeNextFile(torrent, fileIdx) {
   }
   return { skip: null, nextIdx, nextFile };
 }
+
+export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, cache, fetchImpl = fetch, reqId = '-' }) {
+  try {
+    const { skip, nextIdx, nextFile } = computeNextFile(torrent, fileIdx);
+    if (skip) {
+      console.log(`[${reqId}] PREFETCH: skip reason=${skip} nextIdx=${nextIdx}`);
+      return;
+    }
+
+    const markerUrl = `https://prefetch.local/${infoHash}/${nextIdx}`;
+    if (await cache.match(markerUrl)) {
+      console.log(`[${reqId}] PREFETCH: skip reason=already-warmed nextIdx=${nextIdx}`);
+      return;
+    }
+    await cache.put(markerUrl, new Response('1', { headers: { 'Cache-Control': 'max-age=300' } }));
+
+    const torboxUrl = getDownloadUrl(apiKey, torrent.id, nextFile.id);
+    const dlRes = await fetchImpl(torboxUrl, { redirect: 'manual' });
+    const cdnUrl = dlRes.headers.get('Location');
+    if (!cdnUrl) {
+      console.log(`[${reqId}] PREFETCH: no CDN location for nextIdx=${nextIdx}`);
+      return;
+    }
+
+    const warmRes = await fetchImpl(cdnUrl, { headers: { Range: 'bytes=0-0' } });
+    console.log(`[${reqId}] PREFETCH: warmed nextIdx=${nextIdx} file=${nextFile.short_name || nextFile.name} status=${warmRes.status}`);
+  } catch (err) {
+    console.log(`[${reqId}] PREFETCH ERROR: ${err.message}`);
+  }
+}
