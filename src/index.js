@@ -490,6 +490,15 @@ function isVideo(filename = '') {
   return VIDEO_EXTS.some(ext => filename.toLowerCase().endsWith(ext));
 }
 
+// Cache keys live in the SHARED edge cache (caches.default is global, not
+// per-user), so anything tenant-specific MUST be namespaced by the caller's
+// identity. Hashed, never the raw key: cache keys surface in traces/analytics
+// and this worker runs with observability enabled.
+export async function tenantId(apiKey) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(apiKey || ''));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
 export function computeNextFile(torrent, fileIdx) {
   const allFiles = torrent?.files || [];
   const nextIdx = fileIdx + 1;
@@ -511,7 +520,7 @@ export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, 
       return;
     }
 
-    const markerUrl = `https://prefetch.local/${infoHash}/${nextIdx}`;
+    const markerUrl = `https://prefetch.local/${await tenantId(apiKey)}/${infoHash}/${nextIdx}`;
     if (await cache.match(markerUrl)) {
       console.log(`[${reqId}] PREFETCH: skip reason=already-warmed nextIdx=${nextIdx}`);
       return;
