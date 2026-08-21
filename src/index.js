@@ -85,6 +85,74 @@ const CONFIG_PAGE = `<!DOCTYPE html>
 </body>
 </html>`;
 
+// --- Torbox transport: retries + non-JSON guards ---
+//
+// Torbox sits behind Cloudflare. When its origin is unhealthy the API answers
+// with a plain-text body ("error code: 521"), not JSON. Calling .json() on that
+// throws a SyntaxError, which used to escape as a 500 and read to Stremio as a
+// dead video. Everything upstream now funnels through torboxRequest().
+
+export class TorboxUnavailable extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'TorboxUnavailable';
+    this.status = status;
+  }
+}
+
+const sleep = (ms) => (ms > 0 ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve());
+
+function isTransient(status) {
+  return status >= 500 || status === 429;
+}
+
+// Returns parsed JSON. Throws TorboxUnavailable if the upstream is down or
+// answers with something that isn't JSON. 4xx bodies that ARE valid JSON are
+// returned as-is so callers can inspect .success / .error themselves.
+export async function torboxRequest(url, init = {}, opts = {}) {
+  const { fetchImpl = fetch, retries = 2, delayMs = 250, reqId = '-', label = 'torbox' } = opts;
+
+  let lastStatus = 0;
+  let lastReason = 'unknown';
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) await sleep(delayMs * attempt);
+
+    let res;
+    try {
+      res = await fetchImpl(url, init);
+    } catch (err) {
+      lastStatus = 0;
+      lastReason = `network: ${err.message}`;
+      console.log(`[${reqId}] ${label}: attempt ${attempt + 1} network error: ${err.message}`);
+      continue;
+    }
+
+    lastStatus = res.status;
+
+    if (isTransient(res.status)) {
+      lastReason = `upstream ${res.status}`;
+      console.log(`[${reqId}] ${label}: attempt ${attempt + 1} upstream status=${res.status}, retrying`);
+      continue;
+    }
+
+    const contentType = res.headers?.get?.('content-type') || '';
+    try {
+      const parsed = await res.json();
+      if (parsed === null || typeof parsed !== 'object') {
+        throw new TypeError('body was not a JSON object');
+      }
+      return parsed;
+    } catch (err) {
+      // Non-transient status but an unparseable body — retrying will not help.
+      console.log(`[${reqId}] ${label}: status=${res.status} content-type="${contentType}" unparseable body: ${err.message}`);
+      throw new TorboxUnavailable(`${label}: non-JSON response (status ${res.status})`, res.status);
+    }
+  }
+
+  throw new TorboxUnavailable(`${label}: ${lastReason} after ${retries + 1} attempt(s)`, lastStatus);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -204,29 +272,39 @@ async function handleStream(episodeId, apiKey, request, ctx) {
 
 // --- Resolve Handler ---
 
-async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
-  const reqId = crypto.randomUUID().slice(0, 8);
+export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
+  const { fetchImpl = fetch } = opts;
+  const reqId = (opts.reqId && opts.reqId !== 'test')
+    ? opts.reqId
+    : crypto.randomUUID().slice(0, 8);
 
   console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
 
   try {
-    let torrent = await findTorrent(apiKey, infoHash, reqId);
+    let torrent = await findTorrent(apiKey, infoHash, reqId, opts);
 
     if (!torrent) {
       console.log(`[${reqId}] Torrent not found in list, creating...`);
-      const created = await createTorrent(apiKey, infoHash, reqId);
+      const created = await createTorrent(apiKey, infoHash, reqId, opts);
       console.log(`[${reqId}] createTorrent response: success=${created.success} torrent_id=${created.data?.torrent_id} queued_id=${created.data?.queued_id} error=${JSON.stringify(created.error)} detail=${created.detail}`);
 
       if (created.data?.torrent_id) {
         console.log(`[${reqId}] Torbox cached, fetching torrent_id=${created.data.torrent_id}`);
-        torrent = await getTorrent(apiKey, created.data.torrent_id, reqId);
+        torrent = await getTorrent(apiKey, created.data.torrent_id, reqId, opts);
         if (!torrent) {
           console.log(`[${reqId}] ERROR: getTorrent returned null after create`);
           return new Response('Failed to fetch newly created torrent', { status: 503 });
         }
+      } else if (isBadToken(created)) {
+        // Permanent, not transient: telling Stremio to retry would leave the
+        // user staring at "adding to Torbox" forever over a typo'd key.
+        console.log(`[${reqId}] RESULT: 401 - Bad Torbox token`);
+        return new Response(
+          'Invalid or expired Torbox API key. Re-run the addon configure page to generate a new URL.',
+          { status: 401, headers: { 'Cache-Control': 'no-store' } }
+        );
       } else {
-        console.log(`[${reqId}] RESULT: 503 - Queued for download`);
-        return new Response('Adding to Torbox, try again shortly', { status: 503 });
+        return retryLater(reqId, 'queued for download', 10);
       }
     }
 
@@ -234,7 +312,7 @@ async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
 
     if (statusError(torrent)) {
       console.log(`[${reqId}] Torrent in error state, re-creating...`);
-      await createTorrent(apiKey, infoHash, reqId);
+      await createTorrent(apiKey, infoHash, reqId, opts);
       console.log(`[${reqId}] RESULT: 503 - Torrent error`);
       return new Response('Torrent error, retrying. Try again shortly', { status: 503 });
     }
@@ -278,9 +356,15 @@ async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
     const torboxUrl = getDownloadUrl(apiKey, torrent.id, file.id);
     console.log(`[${reqId}] Fetching download URL server-side: torrent_id=${torrent.id} file_id=${file.id} file_name=${file.short_name || file.name}`);
 
-    const dlRes = await fetch(torboxUrl, { redirect: 'manual' });
-    const cdnUrl = dlRes.headers.get('Location');
+    let dlRes;
+    try {
+      dlRes = await fetchImpl(torboxUrl, { redirect: 'manual' });
+    } catch (err) {
+      console.log(`[${reqId}] requestdl network error: ${err.message}`);
+      return retryLater(reqId, 'requestdl unreachable');
+    }
 
+    const cdnUrl = dlRes.headers.get('Location');
     console.log(`[${reqId}] Torbox requestdl response: status=${dlRes.status} hasLocation=${!!cdnUrl}`);
 
     if (cdnUrl) {
@@ -288,8 +372,22 @@ async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
       return Response.redirect(cdnUrl, 302);
     }
 
-    // If no redirect, try parsing JSON response for download link
-    const dlData = await dlRes.json();
+    // No redirect. Torbox may still be handing us a JSON payload with the link —
+    // but when its origin is down this is a plain-text Cloudflare error page,
+    // so the parse must not be allowed to throw into the 500 handler.
+    if (isTransient(dlRes.status)) {
+      console.log(`[${reqId}] requestdl upstream status=${dlRes.status}`);
+      return retryLater(reqId, `requestdl upstream ${dlRes.status}`);
+    }
+
+    let dlData;
+    try {
+      dlData = await dlRes.json();
+    } catch (err) {
+      console.log(`[${reqId}] requestdl non-JSON body (status=${dlRes.status}): ${err.message}`);
+      return retryLater(reqId, 'requestdl non-JSON body');
+    }
+
     console.log(`[${reqId}] Torbox requestdl JSON: success=${dlData.success} hasData=${!!dlData.data} error=${JSON.stringify(dlData.error)} detail=${dlData.detail}`);
 
     if (dlData.data) {
@@ -301,19 +399,37 @@ async function handleResolve(infoHash, fileIdx, apiKey, ctx) {
     return new Response('Could not resolve download link', { status: 502 });
 
   } catch (err) {
+    if (err instanceof TorboxUnavailable) {
+      console.log(`[${reqId}] RESULT: 503 - Torbox unavailable (status=${err.status}): ${err.message}`);
+      return retryLater(reqId, err.message);
+    }
     console.error(`[${reqId}] RESOLVE ERROR:`, err.message, err.stack);
     return new Response('Internal error', { status: 500 });
   }
 }
 
+function isBadToken(result) {
+  return result?.error === 'BAD_TOKEN';
+}
+
+// 503 + Retry-After tells Stremio "transient, come back" instead of "broken".
+function retryLater(reqId, reason, seconds = 5) {
+  console.log(`[${reqId}] RESULT: 503 - ${reason}`);
+  return new Response(`Torbox temporarily unavailable (${reason}). Retrying shortly.`, {
+    status: 503,
+    headers: { 'Retry-After': String(seconds), 'Cache-Control': 'no-store' }
+  });
+}
+
 // --- Torbox API ---
 
-async function findTorrent(apiKey, infoHash, reqId = '-') {
-  const res = await fetch(`${TORBOX_API}/api/torrents/mylist?bypass_cache=true`, {
-    headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' }
-  });
-  const data = await res.json();
-  console.log(`[${reqId}] findTorrent: status=${res.status} success=${data.success} isArray=${Array.isArray(data.data)} count=${Array.isArray(data.data) ? data.data.length : 'N/A'} error=${JSON.stringify(data.error)} detail=${data.detail}`);
+export async function findTorrent(apiKey, infoHash, reqId = '-', opts = {}) {
+  const data = await torboxRequest(
+    `${TORBOX_API}/api/torrents/mylist?bypass_cache=true`,
+    { headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' } },
+    { ...opts, reqId, label: 'findTorrent' }
+  );
+  console.log(`[${reqId}] findTorrent: success=${data.success} isArray=${Array.isArray(data.data)} count=${Array.isArray(data.data) ? data.data.length : 'N/A'} error=${JSON.stringify(data.error)} detail=${data.detail}`);
 
   if (!data.success || !Array.isArray(data.data)) {
     console.log(`[${reqId}] findTorrent: API returned non-success or non-array data`);
@@ -331,12 +447,13 @@ async function findTorrent(apiKey, infoHash, reqId = '-') {
   return matches.find(t => !statusError(t)) || matches[0] || null;
 }
 
-async function getTorrent(apiKey, torrentId, reqId = '-') {
-  const res = await fetch(`${TORBOX_API}/api/torrents/mylist?id=${torrentId}&bypass_cache=true`, {
-    headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' }
-  });
-  const data = await res.json();
-  console.log(`[${reqId}] getTorrent: status=${res.status} success=${data.success} torrentId=${torrentId} isArray=${Array.isArray(data.data)} error=${JSON.stringify(data.error)}`);
+export async function getTorrent(apiKey, torrentId, reqId = '-', opts = {}) {
+  const data = await torboxRequest(
+    `${TORBOX_API}/api/torrents/mylist?id=${torrentId}&bypass_cache=true`,
+    { headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' } },
+    { ...opts, reqId, label: 'getTorrent' }
+  );
+  console.log(`[${reqId}] getTorrent: success=${data.success} torrentId=${torrentId} isArray=${Array.isArray(data.data)} error=${JSON.stringify(data.error)}`);
 
   if (!data.success) return null;
   const torrent = Array.isArray(data.data) ? data.data[0] : data.data;
@@ -346,20 +463,23 @@ async function getTorrent(apiKey, torrentId, reqId = '-') {
   return torrent;
 }
 
-async function createTorrent(apiKey, infoHash, reqId = '-') {
+export async function createTorrent(apiKey, infoHash, reqId = '-', opts = {}) {
   const trackerParams = ANIME_TRACKERS.map(t => `&tr=${encodeURIComponent(t)}`).join('');
   const magnet = `magnet:?xt=urn:btih:${infoHash}${trackerParams}`;
   const body = new URLSearchParams({
     magnet,
     allow_zip: 'false'
   });
-  const res = await fetch(`${TORBOX_API}/api/torrents/createtorrent`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' },
-    body
-  });
-  const result = await res.json();
-  console.log(`[${reqId}] createTorrent: status=${res.status} success=${result.success} torrent_id=${result.data?.torrent_id} queued_id=${result.data?.queued_id} hash=${result.data?.hash} error=${JSON.stringify(result.error)} detail=${result.detail}`);
+  const result = await torboxRequest(
+    `${TORBOX_API}/api/torrents/createtorrent`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'User-Agent': 'one-pace-torbox' },
+      body
+    },
+    { ...opts, reqId, label: 'createTorrent' }
+  );
+  console.log(`[${reqId}] createTorrent: success=${result.success} torrent_id=${result.data?.torrent_id} queued_id=${result.data?.queued_id} hash=${result.data?.hash} error=${JSON.stringify(result.error)} detail=${result.detail}`);
   return result;
 }
 
@@ -379,6 +499,15 @@ function statusError(torrent) {
 
 function isVideo(filename = '') {
   return VIDEO_EXTS.some(ext => filename.toLowerCase().endsWith(ext));
+}
+
+// Cache keys live in the SHARED edge cache (caches.default is global, not
+// per-user), so anything tenant-specific MUST be namespaced by the caller's
+// identity. Hashed, never the raw key: cache keys surface in traces/analytics
+// and this worker runs with observability enabled.
+export async function tenantId(apiKey) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(apiKey || ''));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }
 
 export function computeNextFile(torrent, fileIdx) {
@@ -402,7 +531,7 @@ export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, 
       return;
     }
 
-    const markerUrl = `https://prefetch.local/${infoHash}/${nextIdx}`;
+    const markerUrl = `https://prefetch.local/${await tenantId(apiKey)}/${infoHash}/${nextIdx}`;
     if (await cache.match(markerUrl)) {
       console.log(`[${reqId}] PREFETCH: skip reason=already-warmed nextIdx=${nextIdx}`);
       return;
