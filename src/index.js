@@ -295,9 +295,16 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
           console.log(`[${reqId}] ERROR: getTorrent returned null after create`);
           return new Response('Failed to fetch newly created torrent', { status: 503 });
         }
+      } else if (isBadToken(created)) {
+        // Permanent, not transient: telling Stremio to retry would leave the
+        // user staring at "adding to Torbox" forever over a typo'd key.
+        console.log(`[${reqId}] RESULT: 401 - Bad Torbox token`);
+        return new Response(
+          'Invalid or expired Torbox API key. Re-run the addon configure page to generate a new URL.',
+          { status: 401, headers: { 'Cache-Control': 'no-store' } }
+        );
       } else {
-        console.log(`[${reqId}] RESULT: 503 - Queued for download`);
-        return new Response('Adding to Torbox, try again shortly', { status: 503 });
+        return retryLater(reqId, 'queued for download', 10);
       }
     }
 
@@ -399,6 +406,10 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     console.error(`[${reqId}] RESOLVE ERROR:`, err.message, err.stack);
     return new Response('Internal error', { status: 500 });
   }
+}
+
+function isBadToken(result) {
+  return result?.error === 'BAD_TOKEN';
 }
 
 // 503 + Retry-After tells Stremio "transient, come back" instead of "broken".

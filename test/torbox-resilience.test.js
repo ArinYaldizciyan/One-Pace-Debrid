@@ -173,3 +173,48 @@ describe('handleResolve — upstream outage behaviour', () => {
     expect(res.headers.get('Location')).toBe('https://cdn.torbox/file.mkv');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Surfaced by scripts/e2e.mjs: a bad key was reported as "Adding to Torbox",
+// i.e. a permanent auth failure disguised as a transient queue state.
+// ---------------------------------------------------------------------------
+describe('handleResolve — auth vs transient', () => {
+  const authFail = (code) => jsonResponse(
+    { success: false, error: code, detail: 'Your token is invalid or has expired.' }, 403);
+
+  it('returns 401 for BAD_TOKEN rather than a misleading 503', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(authFail('BAD_TOKEN'));
+    const res = await handleResolve('abc123', 5, 'BAD', null, { ...NO_DELAY, fetchImpl, retries: 0 });
+    expect(res.status).toBe(401);
+    expect(await res.text()).toMatch(/key/i);
+  });
+
+  it('keeps AUTH_ERROR transient — it was observed self-recovering in prod', async () => {
+    // findTorrent 403s, createTorrent then succeeds from cache (the real prod trace).
+    const torrent = {
+      id: 79701944, hash: 'abc123', active: false, download_finished: true,
+      download_present: true, download_state: 'cached',
+      files: [{ id: 12, name: 'Marineford 06.mkv', size: 212022000 }],
+    };
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ success: false, error: 'AUTH_ERROR', detail: 'try again' }, 403))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { torrent_id: 79701944 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: torrent }))
+      .mockResolvedValueOnce({
+        ok: false, status: 307,
+        headers: { get: (h) => (h === 'Location' ? 'https://cdn.torbox/f.mkv' : null) },
+        text: async () => '', json: async () => ({}),
+      });
+    const res = await handleResolve('abc123', 0, 'KEY', null, { ...NO_DELAY, fetchImpl, retries: 0 });
+    expect(res.status).toBe(302);
+  });
+
+  it('queued-for-download 503 carries Retry-After like every other retryable 503', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: [] }))                       // not in library
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { queued_id: 42 } }));       // queued
+    const res = await handleResolve('abc123', 5, 'KEY', null, { ...NO_DELAY, fetchImpl, retries: 0 });
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Retry-After')).toBeTruthy();
+  });
+});
