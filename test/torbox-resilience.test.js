@@ -136,8 +136,9 @@ describe('handleResolve — upstream outage behaviour', () => {
       ],
     };
     const fetchImpl = vi.fn()
-      // findTorrent -> mylist
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: [torrent] }))
+      // createtorrent -> existing torrent_id, then mylist?id
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { torrent_id: 79701944 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: torrent }))
       // requestdl -> Cloudflare 521, no Location header
       .mockResolvedValueOnce(cfErrorResponse(521));
 
@@ -159,7 +160,8 @@ describe('handleResolve — upstream outage behaviour', () => {
       ],
     };
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: [torrent] }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { torrent_id: 79701944 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: torrent }))
       .mockResolvedValueOnce({
         ok: false,
         status: 307,
@@ -190,7 +192,7 @@ describe('handleResolve — auth vs transient', () => {
   });
 
   it('keeps AUTH_ERROR transient — it was observed self-recovering in prod', async () => {
-    // findTorrent 403s, createTorrent then succeeds from cache (the real prod trace).
+    // createtorrent 403s AUTH_ERROR; the list-scan fallback then finds it.
     const torrent = {
       id: 79701944, hash: 'abc123', active: false, download_finished: true,
       download_present: true, download_state: 'cached',
@@ -198,8 +200,7 @@ describe('handleResolve — auth vs transient', () => {
     };
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ success: false, error: 'AUTH_ERROR', detail: 'try again' }, 403))
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: { torrent_id: 79701944 } }))
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: torrent }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: [torrent] }))
       .mockResolvedValueOnce({
         ok: false, status: 307,
         headers: { get: (h) => (h === 'Location' ? 'https://cdn.torbox/f.mkv' : null) },
@@ -211,7 +212,6 @@ describe('handleResolve — auth vs transient', () => {
 
   it('queued-for-download 503 carries Retry-After like every other retryable 503', async () => {
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: [] }))                       // not in library
       .mockResolvedValueOnce(jsonResponse({ success: true, data: { queued_id: 42 } }));       // queued
     const res = await handleResolve('abc123', 5, 'KEY', null, { ...NO_DELAY, fetchImpl, retries: 0 });
     expect(res.status).toBe(503);
