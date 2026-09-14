@@ -280,32 +280,31 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
 
   console.log(`[${reqId}] RESOLVE START infoHash=${infoHash} fileIdx=${fileIdx}`);
 
+  // Players (mpv, ExoPlayer) don't remember our 302: every range request and
+  // every seek comes back here. Without this cache each one re-ran the whole
+  // Torbox lookup — 4-12s apiece in prod logs for a single episode start.
+  const cache = opts.cache !== undefined ? opts.cache : (globalThis.caches?.default ?? null);
+  const tenant = await tenantId(apiKey);
+  const linkKey = `https://resolve.local/${tenant}/${infoHash}/${fileIdx}`;
+  const torrentKey = `https://torrent.local/${tenant}/${infoHash}`;
+
   try {
-    let torrent = await findTorrent(apiKey, infoHash, reqId, opts);
+    const cachedLink = cache && await cache.match(linkKey);
+    if (cachedLink) {
+      console.log(`[${reqId}] RESULT: 302 - Cached CDN link`);
+      return Response.redirect(await cachedLink.text(), 302);
+    }
 
-    if (!torrent) {
-      console.log(`[${reqId}] Torrent not found in list, creating...`);
-      const created = await createTorrent(apiKey, infoHash, reqId, opts);
-      console.log(`[${reqId}] createTorrent response: success=${created.success} torrent_id=${created.data?.torrent_id} queued_id=${created.data?.queued_id} error=${JSON.stringify(created.error)} detail=${created.detail}`);
+    const cachedTorrent = cache && await cache.match(torrentKey);
+    let torrent = cachedTorrent ? await cachedTorrent.json() : null;
+    const torrentFromCache = !!torrent;
 
-      if (created.data?.torrent_id) {
-        console.log(`[${reqId}] Torbox cached, fetching torrent_id=${created.data.torrent_id}`);
-        torrent = await getTorrent(apiKey, created.data.torrent_id, reqId, opts);
-        if (!torrent) {
-          console.log(`[${reqId}] ERROR: getTorrent returned null after create`);
-          return new Response('Failed to fetch newly created torrent', { status: 503 });
-        }
-      } else if (isBadToken(created)) {
-        // Permanent, not transient: telling Stremio to retry would leave the
-        // user staring at "adding to Torbox" forever over a typo'd key.
-        console.log(`[${reqId}] RESULT: 401 - Bad Torbox token`);
-        return new Response(
-          'Invalid or expired Torbox API key. Re-run the addon configure page to generate a new URL.',
-          { status: 401, headers: { 'Cache-Control': 'no-store' } }
-        );
-      } else {
-        return retryLater(reqId, 'queued for download', 10);
-      }
+    if (torrent) {
+      console.log(`[${reqId}] Torrent from cache: id=${torrent.id}`);
+    } else {
+      const located = await locateTorrent(apiKey, infoHash, reqId, opts);
+      if (located.response) return located.response;
+      torrent = located.torrent;
     }
 
     console.log(`[${reqId}] Torrent state: id=${torrent.id} hash=${torrent.hash} active=${torrent.active} download_finished=${torrent.download_finished} download_present=${torrent.download_present} download_state=${torrent.download_state} files_count=${torrent.files?.length}`);
@@ -320,6 +319,12 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     if (!statusReady(torrent)) {
       console.log(`[${reqId}] RESULT: 503 - Still downloading`);
       return new Response('Downloading to Torbox...', { status: 503 });
+    }
+
+    if (!torrentFromCache && cache) {
+      await defer(ctx, cache.put(torrentKey, new Response(JSON.stringify(torrent), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': `max-age=${TORRENT_CACHE_TTL}` }
+      })));
     }
 
     const allFiles = torrent.files || [];
@@ -356,6 +361,13 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     const torboxUrl = getDownloadUrl(apiKey, torrent.id, file.id);
     console.log(`[${reqId}] Fetching download URL server-side: torrent_id=${torrent.id} file_id=${file.id} file_name=${file.short_name || file.name}`);
 
+    // A cached torrent can go stale (deleted from Torbox). If requestdl doesn't
+    // hand back a link, drop it so Stremio's retry does a fresh lookup.
+    const forgetTorrent = () => (torrentFromCache && cache?.delete) ? cache.delete(torrentKey) : undefined;
+    const rememberLink = (url) => cache
+      ? defer(ctx, cache.put(linkKey, new Response(url, { headers: { 'Cache-Control': `max-age=${LINK_CACHE_TTL}` } })))
+      : undefined;
+
     let dlRes;
     try {
       dlRes = await fetchImpl(torboxUrl, { redirect: 'manual' });
@@ -368,6 +380,7 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     console.log(`[${reqId}] Torbox requestdl response: status=${dlRes.status} hasLocation=${!!cdnUrl}`);
 
     if (cdnUrl) {
+      await rememberLink(cdnUrl);
       console.log(`[${reqId}] RESULT: 302 - Redirecting to CDN`);
       return Response.redirect(cdnUrl, 302);
     }
@@ -376,6 +389,7 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     // but when its origin is down this is a plain-text Cloudflare error page,
     // so the parse must not be allowed to throw into the 500 handler.
     if (isTransient(dlRes.status)) {
+      await forgetTorrent();
       console.log(`[${reqId}] requestdl upstream status=${dlRes.status}`);
       return retryLater(reqId, `requestdl upstream ${dlRes.status}`);
     }
@@ -384,6 +398,7 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     try {
       dlData = await dlRes.json();
     } catch (err) {
+      await forgetTorrent();
       console.log(`[${reqId}] requestdl non-JSON body (status=${dlRes.status}): ${err.message}`);
       return retryLater(reqId, 'requestdl non-JSON body');
     }
@@ -391,10 +406,12 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
     console.log(`[${reqId}] Torbox requestdl JSON: success=${dlData.success} hasData=${!!dlData.data} error=${JSON.stringify(dlData.error)} detail=${dlData.detail}`);
 
     if (dlData.data) {
+      await rememberLink(dlData.data);
       console.log(`[${reqId}] RESULT: 302 - Redirecting via JSON data`);
       return Response.redirect(dlData.data, 302);
     }
 
+    await forgetTorrent();
     console.log(`[${reqId}] RESULT: 502 - Could not resolve download link`);
     return new Response('Could not resolve download link', { status: 502 });
 
@@ -410,6 +427,48 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
 
 function isBadToken(result) {
   return result?.error === 'BAD_TOKEN';
+}
+
+// Same TTL as AIOStreams' playbackLinkCacheTtl default. The torrent record only
+// maps hash -> Torbox ids/files, which don't change, so it can live longer.
+const LINK_CACHE_TTL = 3600;
+const TORRENT_CACHE_TTL = 86400;
+
+function defer(ctx, promise) {
+  if (ctx?.waitUntil) {
+    ctx.waitUntil(promise);
+    return undefined;
+  }
+  return promise;
+}
+
+// Add-first, like AIOStreams: createtorrent returns the existing torrent_id for
+// a torrent already in the library, so we skip downloading the whole list
+// (293 torrents took 4-12s). The list scan stays as a fallback.
+async function locateTorrent(apiKey, infoHash, reqId, opts) {
+  const created = await createTorrent(apiKey, infoHash, reqId, opts);
+
+  if (created.data?.torrent_id) {
+    const torrent = await getTorrent(apiKey, created.data.torrent_id, reqId, opts);
+    if (torrent) return { torrent };
+    console.log(`[${reqId}] getTorrent returned null after create, falling back to list scan`);
+  } else if (isBadToken(created)) {
+    // Permanent, not transient: telling Stremio to retry would leave the
+    // user staring at "adding to Torbox" forever over a typo'd key.
+    console.log(`[${reqId}] RESULT: 401 - Bad Torbox token`);
+    return {
+      response: new Response(
+        'Invalid or expired Torbox API key. Re-run the addon configure page to generate a new URL.',
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      )
+    };
+  } else if (created.data?.queued_id) {
+    return { response: retryLater(reqId, 'queued for download', 10) };
+  }
+
+  const torrent = await findTorrent(apiKey, infoHash, reqId, opts);
+  if (torrent) return { torrent };
+  return { response: retryLater(reqId, 'could not add torrent to Torbox', 10) };
 }
 
 // 503 + Retry-After tells Stremio "transient, come back" instead of "broken".
