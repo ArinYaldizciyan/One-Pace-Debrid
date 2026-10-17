@@ -388,7 +388,7 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
   // Torbox lookup — 4-12s apiece in prod logs for a single episode start.
   const cache = opts.cache !== undefined ? opts.cache : (globalThis.caches?.default ?? null);
   const tenant = await tenantId(apiKey);
-  const linkKey = `https://resolve.local/${tenant}/${infoHash}/${fileIdx}`;
+  const linkKey = `https://resolve.local/v2/${tenant}/${infoHash}/${fileIdx}`;
   const torrentKey = `https://torrent.local/${tenant}/${infoHash}`;
 
   try {
@@ -693,7 +693,7 @@ export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, 
       return;
     }
 
-    const markerUrl = `https://prefetch.local/${await tenantId(apiKey)}/${infoHash}/${nextIdx}`;
+    const markerUrl = `https://prefetch.local/v2/${await tenantId(apiKey)}/${infoHash}/${nextIdx}`;
     if (await cache.match(markerUrl)) {
       console.log(`[${reqId}] PREFETCH: skip reason=already-warmed nextIdx=${nextIdx}`);
       return;

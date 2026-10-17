@@ -73,13 +73,13 @@ describe('prefetchNextEpisode', () => {
     const [warmUrl, warmOpts] = fetchImpl.mock.calls[1];
     expect(warmUrl).toBe('https://cdn.torbox/next.mkv');
     expect(warmOpts.headers.Range).toBe('bytes=0-0');
-    const marker = `https://prefetch.local/${await tenantId('KEY')}/abc/1`;
+    const marker = `https://prefetch.local/v2/${await tenantId('KEY')}/abc/1`;
     expect(await cache.match(marker)).toBeTruthy();
   });
 
   it('no-ops when the marker already exists (dedupe)', async () => {
     const cache = makeCache();
-    await cache.put(`https://prefetch.local/${await tenantId('KEY')}/abc/1`, { ok: true });
+    await cache.put(`https://prefetch.local/v2/${await tenantId('KEY')}/abc/1`, { ok: true });
     const fetchImpl = vi.fn();
 
     await prefetchNextEpisode({
