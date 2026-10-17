@@ -1,0 +1,815 @@
+{
+  "source": {
+    "repo": "https://github.com/cybr23/Naruto-Kai-Stremio-Addon",
+    "version": "1.3.0",
+    "importedAt": "2026-10-17"
+  },
+  "catalogId": "narutokai_catalog",
+  "catalog": {
+    "id": "naruto_kai",
+    "type": "series",
+    "name": "Naruto Kai Ultimate Subbed Edition",
+    "poster": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/poster.jpg",
+    "background": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/background.jpg",
+    "logo": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/logo.png",
+    "description": "NARUTO KAI: ULTIMATE SUBBED EDITION\n\nA fan project dedicated to removing filler, padding, and executive recaps from the anime.\n\nStructure:\n- Season 1: Manga Content (Volumes 1–72)\n- Season 2: Post-Series Content (Shinden Novels, The Last Movie, Extras)\n\nIncludes re-translated Japanese dub subtitles, restored canonical scenes, Omake extras, The Last: Naruto the Movie, and Itachi Shinden.\n\nNyaa Torrent: https://nyaa.si/view/1063188\n\n--------------------------------------------------\nNote on Complete Canon:\nTo watch 100% of canonical Naruto prior to Boruto, watch these outside this torrent:\n- The Day Naruto Became Hokage (OVA)\n- Naruto Shippuden Episodes 484–500 (Blank Period Novels: Sasuke Shinden, Shikamaru Hiden, and Konoha Hiden)"
+  },
+  "meta": {
+    "id": "naruto_kai",
+    "type": "series",
+    "name": "Naruto Kai Ultimate Subbed Edition",
+    "poster": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/poster.jpg",
+    "background": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/background.jpg",
+    "logo": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/logo.png",
+    "description": "NARUTO KAI: ULTIMATE SUBBED EDITION\n\nA fan project dedicated to removing filler, padding, and executive recaps from the anime.\n\nStructure:\n- Season 1: Manga Content (Volumes 1–72)\n- Season 2: Post-Series Content (Shinden Novels, The Last Movie, Extras)\n\nIncludes re-translated Japanese dub subtitles, restored canonical scenes, Omake extras, The Last: Naruto the Movie, and Itachi Shinden.\n\nNyaa Torrent: https://nyaa.si/view/1063188\n\n--------------------------------------------------\nNote on Complete Canon:\nTo watch 100% of canonical Naruto prior to Boruto, watch these outside this torrent:\n- The Day Naruto Became Hokage (OVA)\n- Naruto Shippuden Episodes 484–500 (Blank Period Novels: Sasuke Shinden, Shikamaru Hiden, and Konoha Hiden)",
+    "videos": [
+      {
+        "id": "naruto_kai:1",
+        "title": "Episode 01 - Naruto Uzumaki! (Ch. 1–7)",
+        "season": 1,
+        "episode": 1,
+        "overview": "Adapts Volume 1. Naruto steals the Scroll of Sealing, learns Shadow Clones, and forms Team 7 with Sasuke and Sakura under Kakashi."
+      },
+      {
+        "id": "naruto_kai:2",
+        "title": "Episode 02 - The Worst Client (Ch. 8–16)",
+        "season": 1,
+        "episode": 2,
+        "overview": "Adapts Volume 2. Team 7 takes a C-rank mission to escort bridge-builder Tazuna to the Land of Waves and faces Zabuza Momochi."
+      },
+      {
+        "id": "naruto_kai:3",
+        "title": "Episode 03 - For My Dream! (Ch. 17–27)",
+        "season": 1,
+        "episode": 3,
+        "overview": "Adapts Volume 3. The climax of the Land of Waves arc; Haku and Zabuza make their final stand on the Great Naruto Bridge."
+      },
+      {
+        "id": "naruto_kai:4",
+        "title": "Episode 04 - The Hero's Bridge! (Ch. 28–36)",
+        "season": 1,
+        "episode": 4,
+        "overview": "Adapts Volume 4. The Chunin Exams begin in Konoha. Team 7 passes the written portion and enters the Forest of Death."
+      },
+      {
+        "id": "naruto_kai:5",
+        "title": "Episode 05 - The Challengers! (Ch. 37–45)",
+        "season": 1,
+        "episode": 5,
+        "overview": "Adapts Volume 5. Orochimaru attacks Team 7 in the Forest of Death and brands Sasuke with the Cursed Seal of Heaven."
+      },
+      {
+        "id": "naruto_kai:6",
+        "title": "Episode 06 - Predator (Ch. 46–54)",
+        "season": 1,
+        "episode": 6,
+        "overview": "Adapts Volume 6. Preliminary rounds of the Chunin Exams commence in the Third Exam arena."
+      },
+      {
+        "id": "naruto_kai:7",
+        "title": "Episode 07 - The Right Path! (Ch. 55–63)",
+        "season": 1,
+        "episode": 7,
+        "overview": "Adapts Volume 7. The preliminaries continue with intense matchups, including Sakura vs. Ino and Rock Lee vs. Gaara."
+      },
+      {
+        "id": "naruto_kai:8",
+        "title": "Episode 08 - Life-or-Death Battles! (Ch. 64–72)",
+        "season": 1,
+        "episode": 8,
+        "overview": "Adapts Volume 8. Preliminaries conclude. Jiraiya takes Naruto under his wing to teach him the Summoning Jutsu."
+      },
+      {
+        "id": "naruto_kai:9",
+        "title": "Episode 09 - Neji vs Hinata (Ch. 73–81)",
+        "season": 1,
+        "episode": 9,
+        "overview": "Adapts Volume 9. Naruto clashes with Neji Hyuga in the main finals of the Chunin Exams."
+      },
+      {
+        "id": "naruto_kai:10",
+        "title": "Episode 10 - A Splendid Ninja! (Ch. 82–90)",
+        "season": 1,
+        "episode": 10,
+        "overview": "Adapts Volume 10. Sasuke battles Gaara, triggering the surprise invasion of Konoha by Sound and Sand shinobi."
+      },
+      {
+        "id": "naruto_kai:11",
+        "title": "Episode 11 - Seeking Apprenticeship! (Ch. 91–99)",
+        "season": 1,
+        "episode": 11,
+        "overview": "Adapts Volume 11. Third Hokage Hiruzen Sarutobi fights Orochimaru using the Reaper Death Seal."
+      },
+      {
+        "id": "naruto_kai:12",
+        "title": "Episode 12 - The Great Flight! (Ch. 100–108)",
+        "season": 1,
+        "episode": 12,
+        "overview": "Adapts Volume 12. Naruto summons Gamabunta to duel Gaara transformed into the One-Tail Shukaku."
+      },
+      {
+        "id": "naruto_kai:13",
+        "title": "Episode 13 - The Chunin Exams, Concluded! (Ch. 109–117)",
+        "season": 1,
+        "episode": 13,
+        "overview": "Adapts Volume 13. The Konoha Crush arc concludes with the funeral of the Third Hokage."
+      },
+      {
+        "id": "naruto_kai:14",
+        "title": "Episode 14 - Hokage vs Hokage! (Ch. 118–126)",
+        "season": 1,
+        "episode": 14,
+        "overview": "Adapts Volume 14. Itachi Uchiha and Kisame Hoshigaki arrive in Konoha hunting the Nine-Tails."
+      },
+      {
+        "id": "naruto_kai:15",
+        "title": "Episode 15 - Naruto's Ninja Handbook! (Ch. 127–135)",
+        "season": 1,
+        "episode": 15,
+        "overview": "Adapts Volume 15. Naruto and Jiraiya search for Tsunade; Jiraiya begins training Naruto in the Rasengan."
+      },
+      {
+        "id": "naruto_kai:16",
+        "title": "Episode 16 - Eulogy (Ch. 136–144)",
+        "season": 1,
+        "episode": 16,
+        "overview": "Adapts Volume 16. The Legendary Sanin battle: Jiraiya and Tsunade face Orochimaru and Kabuto."
+      },
+      {
+        "id": "naruto_kai:17",
+        "title": "Episode 17 - Itachi's Power! (Ch. 145–153)",
+        "season": 1,
+        "episode": 17,
+        "overview": "Adapts Volume 17. Tsunade accepts the title of Fifth Hokage and returns to heal Konoha."
+      },
+      {
+        "id": "naruto_kai:18",
+        "title": "Episode 18 - Tsunade's Decision! (Ch. 154–162)",
+        "season": 1,
+        "episode": 18,
+        "overview": "Adapts Volume 18. Sasuke grows bitter over Naruto's rapid growth and challenges him on the hospital roof."
+      },
+      {
+        "id": "naruto_kai:19",
+        "title": "Episode 19 - The Successor (Ch. 163–171)",
+        "season": 1,
+        "episode": 19,
+        "overview": "Adapts Volume 19. The Sound Four arrive in Konoha to entice Sasuke to join Orochimaru."
+      },
+      {
+        "id": "naruto_kai:20",
+        "title": "Episode 20 - Naruto vs Sasuke! (Ch. 172–180)",
+        "season": 1,
+        "episode": 20,
+        "overview": "Adapts Volume 20. The Sasuke Retrieval Squad is formed under newly promoted Chunin Shikamaru Nara."
+      },
+      {
+        "id": "naruto_kai:21",
+        "title": "Episode 21 - Pursuit (Ch. 181–189)",
+        "season": 1,
+        "episode": 21,
+        "overview": "Adapts Volume 21. Choji fights Jirobo and Neji fights Kidomaru in life-or-death 1v1 battles."
+      },
+      {
+        "id": "naruto_kai:22",
+        "title": "Episode 22 - Comrades (Ch. 190–198)",
+        "season": 1,
+        "episode": 22,
+        "overview": "Adapts Volume 22. Kiba fights Sakon/Ukon while Shikamaru strategizes against Tayuya."
+      },
+      {
+        "id": "naruto_kai:23",
+        "title": "Episode 23 - Predicament (Ch. 199–207)",
+        "season": 1,
+        "episode": 23,
+        "overview": "Adapts Volume 23. Rock Lee and the Sand Siblings (Gaara, Kankuro, Temari) reinforce the retrieval team against Kimimaro."
+      },
+      {
+        "id": "naruto_kai:24",
+        "title": "Episode 24 - Unorthodox (Ch. 208–217)",
+        "season": 1,
+        "episode": 24,
+        "overview": "Adapts Volume 24. Naruto confronts Sasuke at the Valley of the End."
+      },
+      {
+        "id": "naruto_kai:25",
+        "title": "Episode 25 - Itachi And Sasuke, Brothers (Ch. 218–228)",
+        "season": 1,
+        "episode": 25,
+        "overview": "Adapts Volume 25. Flashback to the Uchiha Clan Massacre and the night Sasuke lost his family."
+      },
+      {
+        "id": "naruto_kai:26",
+        "title": "Episode 26 - Awakening (Ch. 229–235)",
+        "season": 1,
+        "episode": 26,
+        "overview": "Adapts Volume 26. One-Tailed Naruto vs. Curse Mark Stage 2 Sasuke at the Valley of the End. Part 1 Climax."
+      },
+      {
+        "id": "naruto_kai:27a",
+        "title": "Episode 27 A - Day of Departure! (Ch. 236–238)",
+        "season": 1,
+        "episode": 27,
+        "overview": "Adapts Volume 27 (Part 1). The aftermath of the Valley of the End fight. Naruto leaves Konoha with Jiraiya for 2.5 years of training."
+      },
+      {
+        "id": "naruto_kai:27b",
+        "title": "Episode 27 B - Kakashi Chronicles (Ch. 239–244)",
+        "season": 1,
+        "episode": 28,
+        "overview": "Adapts Volume 27 (Part 2). Kakashi Gaiden: Young Kakashi, Obito Uchiha, and Rin Nohara on their tragic mission at Kannabi Bridge."
+      },
+      {
+        "id": "naruto_kai:28",
+        "title": "Episode 28 - Naruto's Homecoming! (Ch. 245–253)",
+        "season": 1,
+        "episode": 29,
+        "overview": "Adapts Volume 28. Naruto returns to Konoha. Akatsuki's Deidara and Sasori attack the Sunagakure to capture Kazekage Gaara."
+      },
+      {
+        "id": "naruto_kai:29",
+        "title": "Episode 29 - Kakashi vs Itachi! (Ch. 254–262)",
+        "season": 1,
+        "episode": 30,
+        "overview": "Adapts Volume 29. Team Kakashi and Team Guy head to the Sand Village to rescue Gaara."
+      },
+      {
+        "id": "naruto_kai:30",
+        "title": "Episode 30 - Puppet Masters (Ch. 263–271)",
+        "season": 1,
+        "episode": 31,
+        "overview": "Adapts Volume 30. Chiyo and Sakura fight Sasori while Naruto and Kakashi pursue Deidara."
+      },
+      {
+        "id": "naruto_kai:31",
+        "title": "Episode 31 - Entrusted Feelings! (Ch. 272–281)",
+        "season": 1,
+        "episode": 32,
+        "overview": "Adapts Volume 31. Kazekage Rescue climax; Chiyo uses her life force jutsu to revive Gaara."
+      },
+      {
+        "id": "naruto_kai:32",
+        "title": "Episode 32 - The Road to Sasuke! (Ch. 282–290)",
+        "season": 1,
+        "episode": 33,
+        "overview": "Adapts Volume 32. Sai and Captain Yamato join Team 7 for a mission to intercept Orochimaru's spy at Tenchi Bridge."
+      },
+      {
+        "id": "naruto_kai:33",
+        "title": "Episode 33 - Top-Secret Mission! (Ch. 291–299)",
+        "season": 1,
+        "episode": 34,
+        "overview": "Adapts Volume 33. Four-Tailed Naruto goes berserk against Orochimaru at Tenchi Bridge."
+      },
+      {
+        "id": "naruto_kai:34",
+        "title": "Episode 34 - The Reunion! (Ch. 300–309)",
+        "season": 1,
+        "episode": 35,
+        "overview": "Adapts Volume 34. Team 7 infiltrates Orochimaru's hideout and reunites with Sasuke after 3 years."
+      },
+      {
+        "id": "naruto_kai:35",
+        "title": "Episode 35 - The New Duo! (Ch. 310–319)",
+        "season": 1,
+        "episode": 36,
+        "overview": "Adapts Volume 35. Naruto begins Wind-style nature transformation training. Akatsuki members Hidan and Kakuzu invade the Land of Fire."
+      },
+      {
+        "id": "naruto_kai:36",
+        "title": "Episode 36 - Team 10 (Ch. 320–329)",
+        "season": 1,
+        "episode": 37,
+        "overview": "Adapts Volume 36. Team 10 battles Hidan and Kakuzu; Asuma Sarutobi makes the ultimate sacrifice."
+      },
+      {
+        "id": "naruto_kai:37",
+        "title": "Episode 37 - Shikamaru's Battle! (Ch. 330–339)",
+        "season": 1,
+        "episode": 38,
+        "overview": "Adapts Volume 37. Shikamaru executes his master plan against Hidan while Naruto unveils the Wind Style: Rasenshuriken."
+      },
+      {
+        "id": "naruto_kai:38",
+        "title": "Episode 38 - The Fruits of Training! (Ch. 340–349)",
+        "season": 1,
+        "episode": 39,
+        "overview": "Adapts Volume 38. Sasuke turns against Orochimaru and forms Team Hebi to hunt Itachi."
+      },
+      {
+        "id": "naruto_kai:39",
+        "title": "Episode 39 - On the Move (Ch. 350–359)",
+        "season": 1,
+        "episode": 40,
+        "overview": "Adapts Volume 39. Deidara fights Sasuke in an explosive battle of art and Sharingan."
+      },
+      {
+        "id": "naruto_kai:40",
+        "title": "Episode 40 - The Ultimate Art! (Ch. 360–369)",
+        "season": 1,
+        "episode": 41,
+        "overview": "Adapts Volume 40. Jiraiya infiltrates the Hidden Rain Village to uncover the identity of Akatsuki leader Pain."
+      },
+      {
+        "id": "naruto_kai:41",
+        "title": "Episode 41 - Jiraiya's Choice! (Ch. 370–379)",
+        "season": 1,
+        "episode": 42,
+        "overview": "Adapts Volume 41. Jiraiya enters Sage Mode against Pain's Six Paths and leaves his final encoded message."
+      },
+      {
+        "id": "naruto_kai:42",
+        "title": "Episode 42 - The Secret of the Mangekyo! (Ch. 380–389)",
+        "season": 1,
+        "episode": 43,
+        "overview": "Adapts Volume 42. Sasuke vs. Itachi Uchiha; the truth behind the Mangekyo Sharingan is revealed."
+      },
+      {
+        "id": "naruto_kai:43",
+        "title": "Episode 43 - The One Who Knows the Truth (Ch. 390–399)",
+        "season": 1,
+        "episode": 44,
+        "overview": "Adapts Volume 43. Tobi reveals the dark secret of the Uchiha Massacre to Sasuke, prompting him to form Team Taka."
+      },
+      {
+        "id": "naruto_kai:44",
+        "title": "Episode 44 - Inheriting Sage Jutsu! (Ch. 400–408)",
+        "season": 1,
+        "episode": 45,
+        "overview": "Adapts Volume 44. Naruto travels to Mount Myoboku to learn Toad Sage Mode while Sasuke attacks Killer Bee."
+      },
+      {
+        "id": "naruto_kai:45",
+        "title": "Episode 45 - Leaf Battlefield (Ch. 409–417)",
+        "season": 1,
+        "episode": 46,
+        "overview": "Adapts Volume 45. Pain invades Konoha, devastating the village in search of the Nine-Tails."
+      },
+      {
+        "id": "naruto_kai:46",
+        "title": "Episode 46 - Naruto Returns! (Ch. 418–427)",
+        "season": 1,
+        "episode": 47,
+        "overview": "Adapts Volume 46. Sage Mode Naruto arrives to defend Konoha against Pain."
+      },
+      {
+        "id": "naruto_kai:47",
+        "title": "Episode 47 - The Broken Seal! (Ch. 428–437)",
+        "season": 1,
+        "episode": 48,
+        "overview": "Adapts Volume 47. Hinata defends Naruto; Naruto loses control and enters Eight-Tails form."
+      },
+      {
+        "id": "naruto_kai:48",
+        "title": "Episode 48 - The Cheering Village! (Ch. 438–447)",
+        "season": 1,
+        "episode": 49,
+        "overview": "Adapts Volume 48. Naruto meets Minato Namikaze inside his inner mind and confronts Nagato."
+      },
+      {
+        "id": "naruto_kai:49",
+        "title": "Episode 49 - The Five Kage Summit Commences! (Ch. 448–457)",
+        "season": 1,
+        "episode": 50,
+        "overview": "Adapts Volume 49. The Five Kage assemble in the Land of Iron; Danzo Shimura acts as interim Sixth Hokage."
+      },
+      {
+        "id": "naruto_kai:50",
+        "title": "Episode 50 - Water Prison Death Match (Ch. 458–467)",
+        "season": 1,
+        "episode": 51,
+        "overview": "Adapts Volume 50. Sasuke crashes the Five Kage Summit; Tobi declares the Fourth Shinobi World War."
+      },
+      {
+        "id": "naruto_kai:51",
+        "title": "Episode 51 - Sasuke vs Danzo! (Ch. 468–477)",
+        "season": 1,
+        "episode": 52,
+        "overview": "Adapts Volume 51. Sasuke battles Danzo Shimura and exacts vengeance for Itachi."
+      },
+      {
+        "id": "naruto_kai:52",
+        "title": "Episode 52 - Team 7, Together Again! (Ch. 478–487)",
+        "season": 1,
+        "episode": 53,
+        "overview": "Adapts Volume 52. Naruto, Sakura, and Kakashi confront Sasuke before he receives Itachi's eyes."
+      },
+      {
+        "id": "naruto_kai:53",
+        "title": "Episode 53 - Naruto's Birth (Ch. 488–497)",
+        "season": 1,
+        "episode": 54,
+        "overview": "Adapts Volume 53. Naruto travels to the Falls of Truth on Turtle Island to master the Nine-Tails with Killer Bee."
+      },
+      {
+        "id": "naruto_kai:54",
+        "title": "Episode 54 - Bridge To Peace (Ch. 498–507)",
+        "season": 1,
+        "episode": 55,
+        "overview": "Adapts Volume 54. Naruto meets Kushina Uzumaki and unlocks Nine-Tails Chakra Mode. Kisame fights Guy."
+      },
+      {
+        "id": "naruto_kai:55",
+        "title": "Episode 55 - The Great War Begins (Ch. 508–516)",
+        "season": 1,
+        "episode": 56,
+        "overview": "Adapts Volume 55. Konan fights Tobi in the Hidden Rain. The Allied Shinobi Forces mobilize for war."
+      },
+      {
+        "id": "naruto_kai:56",
+        "title": "Episode 56 - Team Asuma's Reunion! (Ch. 517–525)",
+        "season": 1,
+        "episode": 57,
+        "overview": "Adapts Volume 58. Reanimated shinobi take the battlefield; Team 10 faces their former master Asuma."
+      },
+      {
+        "id": "naruto_kai:57",
+        "title": "Episode 57 - Naruto Heads to the Battlefield! (Ch. 526–534)",
+        "season": 1,
+        "episode": 58,
+        "overview": "Adapts Volume 57. Naruto breaks through the barrier to join the war effort."
+      },
+      {
+        "id": "naruto_kai:58",
+        "title": "Episode 58 - Naruto vs Itachi! (Ch. 535–544)",
+        "season": 1,
+        "episode": 59,
+        "overview": "Adapts Volume 58. Reanimated Itachi and Nagato fight Naruto and Bee; Itachi breaks Kabuto's control with Shisui's eye."
+      },
+      {
+        "id": "naruto_kai:59",
+        "title": "Episode 59 - The Five Kage, Assembled! (Ch. 545–554)",
+        "season": 1,
+        "episode": 60,
+        "overview": "Adapts Volume 59. The real Madara Uchiha is reanimated on the battlefield against the Five Kage."
+      },
+      {
+        "id": "naruto_kai:60",
+        "title": "Episode 60 - Kurama! (Ch. 555–564)",
+        "season": 1,
+        "episode": 61,
+        "overview": "Adapts Volume 60. Naruto connects with Kurama and unlocks Tailed Beast Mode to fight the reanimated Jinchuriki."
+      },
+      {
+        "id": "naruto_kai:61",
+        "title": "Episode 61 - Brothers, United! (Ch. 565–574)",
+        "season": 1,
+        "episode": 62,
+        "overview": "Adapts Volume 61. Itachi and Sasuke team up to battle Kabuto and release the Reanimation Jutsu."
+      },
+      {
+        "id": "naruto_kai:62",
+        "title": "Episode 62 - The Crack (Ch. 575–584)",
+        "season": 1,
+        "episode": 63,
+        "overview": "Adapts Volume 62. Naruto, Bee, Kakashi, and Guy unmask Tobi, revealing Obito Uchiha."
+      },
+      {
+        "id": "naruto_kai:63",
+        "title": "Episode 63 - World of Dreams (Ch. 585–594)",
+        "season": 1,
+        "episode": 64,
+        "overview": "Adapts Volume 63. The Ten-Tails is revived on the battlefield."
+      },
+      {
+        "id": "naruto_kai:64",
+        "title": "Episode 64 - Ten Tails (Ch. 595–607)",
+        "season": 1,
+        "episode": 65,
+        "overview": "Adapts Volume 64. Neji Hyuga sacrifices his life to protect Naruto and Hinata."
+      },
+      {
+        "id": "naruto_kai:65",
+        "title": "Episode 65 - Hashirama and Madara (Ch. 608–617)",
+        "season": 1,
+        "episode": 66,
+        "overview": "Adapts Volume 65. Orochimaru reanimates the Four Hokage so Sasuke can learn the true history of Konoha."
+      },
+      {
+        "id": "naruto_kai:66",
+        "title": "Episode 66 - A New Three-Way Deadlock! (Ch. 618–627)",
+        "season": 1,
+        "episode": 67,
+        "overview": "Adapts Volume 66. The Hokage join the war; Team 7 reunites on the front lines."
+      },
+      {
+        "id": "naruto_kai:67",
+        "title": "Episode 67 - Breakthrough (Ch. 628–637)",
+        "season": 1,
+        "episode": 68,
+        "overview": "Adapts Volume 67. Obito becomes the Ten-Tails Jinchuriki."
+      },
+      {
+        "id": "naruto_kai:68",
+        "title": "Episode 68 - Naruto's Path (Ch. 638–647)",
+        "season": 1,
+        "episode": 69,
+        "overview": "Adapts Volume 68. The Shinobi Alliance pulls the Tailed Beasts out of Obito."
+      },
+      {
+        "id": "naruto_kai:69",
+        "title": "Episode 69 - The Start of a Crimson Spring (Ch. 648–657)",
+        "season": 1,
+        "episode": 70,
+        "overview": "Adapts Volume 69. Madara fully revives; Might Guy opens the Eighth Gate of Death."
+      },
+      {
+        "id": "naruto_kai:70",
+        "title": "Episode 70 - Naruto and the Sage of Six Paths (Ch. 658–667)",
+        "season": 1,
+        "episode": 71,
+        "overview": "Adapts Volume 70. Hagoromo Otsutsuki bestows Six Paths powers upon Naruto and Sasuke."
+      },
+      {
+        "id": "naruto_kai:71",
+        "title": "Episode 71 - I Love You (Ch. 668–679)",
+        "season": 1,
+        "episode": 72,
+        "overview": "Adapts Volume 71. Kaguya Otsutsuki emerges as the final threat."
+      },
+      {
+        "id": "naruto_kai:72",
+        "title": "Episode 72 - Naruto Uzumaki! (Ch. 680–700)",
+        "season": 1,
+        "episode": 73,
+        "overview": "Adapts Volume 72. Team 7 seals Kaguya; Naruto and Sasuke settle their fate at the Valley of the End. Epilogue included."
+      },
+      {
+        "id": "naruto_kai:shinden_1",
+        "title": "Shinden 1 - Itachi Shinden Part 1: Bright Light",
+        "season": 2,
+        "episode": 1,
+        "overview": "Light novel adaptation of Itachi Uchiha's childhood, entrance into ANBU, and relationship with Shisui."
+      },
+      {
+        "id": "naruto_kai:shinden_2",
+        "title": "Shinden 2 - Itachi Shinden Part 2: Dark Night",
+        "season": 2,
+        "episode": 2,
+        "overview": "Light novel adaptation detailing the tragic events leading directly to the Uchiha Clan Massacre."
+      },
+      {
+        "id": "naruto_kai:movie_the_last",
+        "title": "Movie - The Last: Naruto the Movie (2014)",
+        "season": 2,
+        "episode": 3,
+        "overview": "Canonical post-war film set 2 years after Chapter 699. Naruto and Team 7 travel to the moon to stop Toneri Otsutsuki."
+      },
+      {
+        "id": "naruto_kai:omake",
+        "title": "Extra - Kakashi Sensei's Real Face! (Omake)",
+        "season": 2,
+        "episode": 4,
+        "overview": "Special comedy short where Team 7 attempts to unmask Kakashi Hatake."
+      },
+      {
+        "id": "naruto_kai:scroll_of_wind",
+        "title": "Extra - Scroll of Wind: The True Face (Special)",
+        "season": 2,
+        "episode": 5,
+        "overview": "Official manga side-story adaptation celebrating the Naruto exhibition."
+      }
+    ]
+  },
+  "defaults": {
+    "thumbnail": "https://raw.githubusercontent.com/cybr23/Naruto-Kai-Stremio-Addon/main/assets/thumbnail.jpg",
+    "released": "2018-08-04T21:30:00.000Z"
+  },
+  "infoHash": "671b08e4ff6d2b2630cd5dd4b894f79e01c5f2ff",
+  "episodes": {
+    "naruto_kai:1": {
+      "fileIdx": 2
+    },
+    "naruto_kai:2": {
+      "fileIdx": 3
+    },
+    "naruto_kai:3": {
+      "fileIdx": 4
+    },
+    "naruto_kai:4": {
+      "fileIdx": 5
+    },
+    "naruto_kai:5": {
+      "fileIdx": 6
+    },
+    "naruto_kai:6": {
+      "fileIdx": 7
+    },
+    "naruto_kai:7": {
+      "fileIdx": 8
+    },
+    "naruto_kai:8": {
+      "fileIdx": 9
+    },
+    "naruto_kai:9": {
+      "fileIdx": 10
+    },
+    "naruto_kai:10": {
+      "fileIdx": 11
+    },
+    "naruto_kai:11": {
+      "fileIdx": 12
+    },
+    "naruto_kai:12": {
+      "fileIdx": 13
+    },
+    "naruto_kai:13": {
+      "fileIdx": 14
+    },
+    "naruto_kai:14": {
+      "fileIdx": 15
+    },
+    "naruto_kai:15": {
+      "fileIdx": 16
+    },
+    "naruto_kai:16": {
+      "fileIdx": 17
+    },
+    "naruto_kai:17": {
+      "fileIdx": 18
+    },
+    "naruto_kai:18": {
+      "fileIdx": 19
+    },
+    "naruto_kai:19": {
+      "fileIdx": 20
+    },
+    "naruto_kai:20": {
+      "fileIdx": 21
+    },
+    "naruto_kai:21": {
+      "fileIdx": 22
+    },
+    "naruto_kai:22": {
+      "fileIdx": 23
+    },
+    "naruto_kai:23": {
+      "fileIdx": 24
+    },
+    "naruto_kai:24": {
+      "fileIdx": 25
+    },
+    "naruto_kai:25": {
+      "fileIdx": 26
+    },
+    "naruto_kai:26": {
+      "fileIdx": 27
+    },
+    "naruto_kai:27a": {
+      "fileIdx": 28
+    },
+    "naruto_kai:27b": {
+      "fileIdx": 29
+    },
+    "naruto_kai:28": {
+      "fileIdx": 30
+    },
+    "naruto_kai:29": {
+      "fileIdx": 31
+    },
+    "naruto_kai:30": {
+      "fileIdx": 32
+    },
+    "naruto_kai:31": {
+      "fileIdx": 33
+    },
+    "naruto_kai:32": {
+      "fileIdx": 34
+    },
+    "naruto_kai:33": {
+      "fileIdx": 35
+    },
+    "naruto_kai:34": {
+      "fileIdx": 36
+    },
+    "naruto_kai:35": {
+      "fileIdx": 37
+    },
+    "naruto_kai:36": {
+      "fileIdx": 38
+    },
+    "naruto_kai:37": {
+      "fileIdx": 39
+    },
+    "naruto_kai:38": {
+      "fileIdx": 40
+    },
+    "naruto_kai:39": {
+      "fileIdx": 41
+    },
+    "naruto_kai:40": {
+      "fileIdx": 42
+    },
+    "naruto_kai:41": {
+      "fileIdx": 43
+    },
+    "naruto_kai:42": {
+      "fileIdx": 44
+    },
+    "naruto_kai:43": {
+      "fileIdx": 45
+    },
+    "naruto_kai:44": {
+      "fileIdx": 46
+    },
+    "naruto_kai:45": {
+      "fileIdx": 47
+    },
+    "naruto_kai:46": {
+      "fileIdx": 48
+    },
+    "naruto_kai:47": {
+      "fileIdx": 49
+    },
+    "naruto_kai:48": {
+      "fileIdx": 50
+    },
+    "naruto_kai:49": {
+      "fileIdx": 51
+    },
+    "naruto_kai:50": {
+      "fileIdx": 52
+    },
+    "naruto_kai:51": {
+      "fileIdx": 53
+    },
+    "naruto_kai:52": {
+      "fileIdx": 54
+    },
+    "naruto_kai:53": {
+      "fileIdx": 55
+    },
+    "naruto_kai:54": {
+      "fileIdx": 56
+    },
+    "naruto_kai:55": {
+      "fileIdx": 57
+    },
+    "naruto_kai:56": {
+      "fileIdx": 58
+    },
+    "naruto_kai:57": {
+      "fileIdx": 59
+    },
+    "naruto_kai:58": {
+      "fileIdx": 60
+    },
+    "naruto_kai:59": {
+      "fileIdx": 61
+    },
+    "naruto_kai:60": {
+      "fileIdx": 62
+    },
+    "naruto_kai:61": {
+      "fileIdx": 63
+    },
+    "naruto_kai:62": {
+      "fileIdx": 64
+    },
+    "naruto_kai:63": {
+      "fileIdx": 65
+    },
+    "naruto_kai:64": {
+      "fileIdx": 66
+    },
+    "naruto_kai:65": {
+      "fileIdx": 67
+    },
+    "naruto_kai:66": {
+      "fileIdx": 68
+    },
+    "naruto_kai:67": {
+      "fileIdx": 69
+    },
+    "naruto_kai:68": {
+      "fileIdx": 70
+    },
+    "naruto_kai:69": {
+      "fileIdx": 71
+    },
+    "naruto_kai:70": {
+      "fileIdx": 72
+    },
+    "naruto_kai:71": {
+      "fileIdx": 73
+    },
+    "naruto_kai:72": {
+      "fileIdx": 74
+    },
+    "naruto_kai:shinden_1": {
+      "fileIdx": 0
+    },
+    "naruto_kai:shinden_2": {
+      "fileIdx": 1
+    },
+    "naruto_kai:movie_the_last": {
+      "fileIdx": 75
+    },
+    "naruto_kai:omake": {
+      "fileIdx": 76
+    },
+    "naruto_kai:scroll_of_wind": {
+      "fileIdx": 78
+    }
+  }
+}

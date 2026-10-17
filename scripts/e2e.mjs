@@ -24,6 +24,10 @@ const EXPECT_NAME = 'Marineford 06';
 const EXPECT_SIZE = 212022000;          // approx; from the observed file listing
 const EBML_MAGIC = [0x1a, 0x45, 0xdf, 0xa3];
 
+const NK_EPISODE = 'naruto_kai:27a';    // Naruto Kai 1x27 (split episode; exercises the lettered-id path)
+const NK_EXPECT_HASH = '671b08e4ff6d2b2630cd5dd4b894f79e01c5f2ff';
+const NK_EXPECT_IDX = 28;
+
 let pass = 0, fail = 0, skip = 0;
 const ok   = (m, d = '') => { pass++; console.log(`  \x1b[32mPASS\x1b[0m ${m}${d ? `  ${d}` : ''}`); };
 const bad  = (m, d = '') => { fail++; console.log(`  \x1b[31mFAIL\x1b[0m ${m}${d ? `  ${d}` : ''}`); };
@@ -79,6 +83,47 @@ async function timedFetch(url, init) {
     check(vids.length > 400, 'meta lists full episode set', `${vids.length} videos`);
     check(!!target, `meta contains ${EPISODE}`, target ? `S${target.season}E${target.episode} "${target.title}"` : '');
   } catch (e) { bad('meta request threw', e.message); }
+
+  // ---------------------------------------------------------------- naruto kai (vendored source)
+  console.log('\nnaruto kai');
+  try {
+    const { res, dur } = await timedFetch(`${BASE}/${KEY}/catalog/series/narutokai_catalog.json`);
+    const j = await res.json();
+    check(res.status === 200, 'catalog returns 200', ms(dur));
+    check(j.metas?.[0]?.id === 'naruto_kai', 'catalog lists naruto_kai', j.metas?.[0]?.name);
+  } catch (e) { bad('naruto kai catalog request threw', e.message); }
+
+  try {
+    const { res, dur } = await timedFetch(`${BASE}/${KEY}/meta/series/naruto_kai.json`);
+    const j = await res.json();
+    const vids = j.meta?.videos || [];
+    const target = vids.find(v => v.id === NK_EPISODE);
+    check(res.status === 200, 'meta returns 200', ms(dur));
+    check(vids.length >= 78, 'meta lists the full episode set', `${vids.length} videos`);
+    check(!!target, `meta contains ${NK_EPISODE}`, target ? `S${target.season}E${target.episode} "${target.title}"` : '');
+    check(vids.every(v => v.thumbnail && v.released), 'every video has thumbnail + released re-expanded');
+  } catch (e) { bad('naruto kai meta request threw', e.message); }
+
+  try {
+    const { res, dur } = await timedFetch(`${BASE}/${KEY}/stream/series/${NK_EPISODE}.json`);
+    const j = await res.json();
+    const s = j.streams?.[0];
+    check(res.status === 200, 'stream returns 200', ms(dur));
+    check(!!s, 'returns a stream entry');
+    if (s) {
+      check(s.name.startsWith('Naruto Kai'), 'stream is labelled Naruto Kai', JSON.stringify(s.name));
+      check(s.url.includes(`/resolve/${NK_EXPECT_HASH}/${NK_EXPECT_IDX}`),
+            'stream url targets the shared hash + fileIdx', `…/resolve/${NK_EXPECT_HASH.slice(0, 8)}…/${NK_EXPECT_IDX}`);
+      // Only confirm Torbox accepts the hash; the full playback check below
+      // already exercises the shared resolve path end to end.
+      const r = await timedFetch(s.url, { redirect: 'manual' });
+      const st = r.res.status;
+      if (st === 302 || st === 301) ok('resolve returns 302', ms(r.dur));
+      else if (st === 503) warn('resolve 503 — torrent still adding/downloading or Torbox flaking', `Retry-After=${r.res.headers.get('retry-after')}`);
+      else if (st === 401) warn('resolve 401 — needs a real Torbox key');
+      else bad(`resolve unexpected status ${st}`, (await r.res.text()).slice(0, 80));
+    }
+  } catch (e) { bad('naruto kai stream request threw', e.message); }
 
   // ---------------------------------------------------------------- stream
   console.log('\nstream');
