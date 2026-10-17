@@ -38,6 +38,24 @@ const NARUTO_KAI_CATALOG = JSON.stringify({ metas: [NARUTO_KAI.catalog] });
 
 const jsonResponse = (body) => new Response(body, { headers: JSON_HEADERS });
 
+// Torrent file basenames in torrent-index order, keyed by infoHash, for every
+// vendored source. Torbox lists a torrent's files in its own order (and
+// upstream addons index in Stremio's), so for a multi-file torrent we match
+// the Torbox file by NAME and only fall back to position when we have to.
+const VENDORED_FILES = { [NARUTO_KAI.infoHash]: NARUTO_KAI.files };
+
+const basename = (p = '') => p.split('/').pop();
+
+export function pickFile(allFiles, infoHash, idx) {
+  const expected = VENDORED_FILES[infoHash]?.[idx];
+  if (expected) {
+    const match = allFiles.find(f => basename(f.short_name) === expected || basename(f.name) === expected);
+    if (match) return match;
+    console.log(`PICK: no Torbox file named "${expected}" for ${infoHash}[${idx}], falling back to position`);
+  }
+  return allFiles[idx];
+}
+
 export const SOURCES = [
   {
     name: 'Naruto Kai',
@@ -422,7 +440,7 @@ export async function handleResolve(infoHash, fileIdx, apiKey, ctx, opts = {}) {
       console.log(`[${reqId}] All files: ${JSON.stringify(allFiles.map((f, i) => ({ idx: i, id: f.id, name: f.short_name || f.name, size: f.size })))}`);
     }
 
-    const target = allFiles[fileIdx];
+    const target = pickFile(allFiles, infoHash, fileIdx);
     const file = (target && isVideo(target.short_name || target.name)) ? target : videos[0];
 
     if (target && !isVideo(target.short_name || target.name)) {
@@ -654,13 +672,13 @@ export async function tenantId(apiKey) {
   return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }
 
-export function computeNextFile(torrent, fileIdx) {
+export function computeNextFile(torrent, fileIdx, infoHash) {
   const allFiles = torrent?.files || [];
   const nextIdx = fileIdx + 1;
-  if (nextIdx >= allFiles.length) {
+  const nextFile = pickFile(allFiles, infoHash, nextIdx);
+  if (!nextFile) {
     return { skip: 'boundary', nextIdx };
   }
-  const nextFile = allFiles[nextIdx];
   if (!isVideo(nextFile.short_name || nextFile.name)) {
     return { skip: 'non-video', nextIdx, nextFile };
   }
@@ -669,7 +687,7 @@ export function computeNextFile(torrent, fileIdx) {
 
 export async function prefetchNextEpisode({ apiKey, infoHash, torrent, fileIdx, cache, fetchImpl = fetch, reqId = '-' }) {
   try {
-    const { skip, nextIdx, nextFile } = computeNextFile(torrent, fileIdx);
+    const { skip, nextIdx, nextFile } = computeNextFile(torrent, fileIdx, infoHash);
     if (skip) {
       console.log(`[${reqId}] PREFETCH: skip reason=${skip} nextIdx=${nextIdx}`);
       return;

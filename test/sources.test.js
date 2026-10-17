@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import worker, { SOURCES, MANIFEST, sourceForEpisode, handleStream } from '../src/index.js';
+import worker, { SOURCES, MANIFEST, sourceForEpisode, handleStream, pickFile, computeNextFile } from '../src/index.js';
 import NARUTO_KAI from '../src/data/naruto-kai.json';
 
 const KEY = 'test-key';
@@ -97,6 +97,66 @@ describe('Naruto Kai (vendored)', () => {
   it('shares one torrent across all episodes', () => {
     expect(NARUTO_KAI.infoHash).toMatch(/^[a-f0-9]{40}$/);
     expect(Object.values(NARUTO_KAI.episodes).some(e => e.infoHash)).toBe(false);
+  });
+});
+
+describe('Naruto Kai file mapping', () => {
+  it('maps every episode onto a named torrent file', () => {
+    for (const [id, ep] of Object.entries(NARUTO_KAI.episodes)) {
+      expect(NARUTO_KAI.files[ep.fileIdx], id).toBeDefined();
+    }
+  });
+
+  it('maps numbered episodes onto the file with the same number', () => {
+    for (const v of NARUTO_KAI.meta.videos) {
+      const want = v.title.match(/Episode (\d+)(?: ([AB]))?/);
+      if (!want) continue;
+      const file = NARUTO_KAI.files[NARUTO_KAI.episodes[v.id].fileIdx];
+      expect(file, v.id).toContain(`Episode ${want[1]}${want[2] ? ` ${want[2]}` : ''} -`);
+    }
+  });
+
+  it('points episode 28 at Naruto\'s Homecoming', () => {
+    const file = NARUTO_KAI.files[NARUTO_KAI.episodes['naruto_kai:28'].fileIdx];
+    expect(file).toMatch(/Episode 28 - Naruto's Homecoming/);
+  });
+});
+
+describe('pickFile', () => {
+  const hash = NARUTO_KAI.infoHash;
+  const ep28 = NARUTO_KAI.episodes['naruto_kai:28'].fileIdx;
+  const ep29 = NARUTO_KAI.episodes['naruto_kai:29'].fileIdx;
+  const name = (idx) => NARUTO_KAI.files[idx];
+
+  // Torbox lists the same files in a different order, under the torrent folder.
+  const shuffled = [
+    { id: 90, name: `Naruto Kai/${name(ep29)}`, short_name: name(ep29) },
+    { id: 91, name: 'Naruto Kai/Readme.txt', short_name: 'Readme.txt' },
+    { id: 92, name: `Naruto Kai/${name(ep28)}`, short_name: name(ep28) },
+  ];
+
+  it('matches a vendored torrent by file name, not position', () => {
+    expect(pickFile(shuffled, hash, ep28).id).toBe(92);
+    expect(pickFile(shuffled, hash, ep29).id).toBe(90);
+  });
+
+  it('matches on the full path when short_name is absent', () => {
+    const noShort = shuffled.map(({ id, name }) => ({ id, name }));
+    expect(pickFile(noShort, hash, ep28).id).toBe(92);
+  });
+
+  it('falls back to position for an unknown torrent', () => {
+    expect(pickFile(shuffled, 'deadbeef', 1).id).toBe(91);
+  });
+
+  it('falls back to position when the expected name is missing', () => {
+    expect(pickFile(shuffled, hash, 1).id).toBe(91);
+  });
+
+  it('drives next-episode prefetch by torrent order, not Torbox order', () => {
+    const r = computeNextFile({ files: shuffled }, ep28, hash);
+    expect(r.skip).toBe(null);
+    expect(r.nextFile.id).toBe(90);
   });
 });
 

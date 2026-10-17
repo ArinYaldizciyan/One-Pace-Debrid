@@ -26,7 +26,7 @@ const EBML_MAGIC = [0x1a, 0x45, 0xdf, 0xa3];
 
 const NK_EPISODE = 'naruto_kai:27a';    // Naruto Kai 1x27 (split episode; exercises the lettered-id path)
 const NK_EXPECT_HASH = '671b08e4ff6d2b2630cd5dd4b894f79e01c5f2ff';
-const NK_EXPECT_IDX = 28;
+const NK_EXPECT_IDX = 26;              // torrent index, not upstream's Stremio-order index
 
 let pass = 0, fail = 0, skip = 0;
 const ok   = (m, d = '') => { pass++; console.log(`  \x1b[32mPASS\x1b[0m ${m}${d ? `  ${d}` : ''}`); };

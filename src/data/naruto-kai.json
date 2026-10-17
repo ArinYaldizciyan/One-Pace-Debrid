@@ -2,6 +2,7 @@
   "source": {
     "repo": "https://github.com/cybr23/Naruto-Kai-Stremio-Addon",
     "version": "1.3.0",
+    "torrent": "https://nyaa.si/view/1063188",
     "importedAt": "2026-10-17"
   },
   "catalogId": "narutokai_catalog",
@@ -576,240 +577,321 @@
     "released": "2018-08-04T21:30:00.000Z"
   },
   "infoHash": "671b08e4ff6d2b2630cd5dd4b894f79e01c5f2ff",
+  "files": [
+    "Naruto - Episode 01 - Naruto Uzumaki!.mkv",
+    "Naruto - Episode 02 - The Worst Client.mkv",
+    "Naruto - Episode 03 - For My Dream!.mkv",
+    "Naruto - Episode 04 - The Hero's Bridge!.mkv",
+    "Naruto - Episode 05 - The Challengers!.mkv",
+    "Naruto - Episode 06 - Predator.mkv",
+    "Naruto - Episode 07 - The Right Path!.mkv",
+    "Naruto - Episode 08 - Life-or-Death Battles!.mkv",
+    "Naruto - Episode 09 - Neji vs Hinata.mkv",
+    "Naruto - Episode 10 - A Splendid Ninja!.mkv",
+    "Naruto - Episode 11 - Seeking Apprenticeship!.mkv",
+    "Naruto - Episode 12 - The Great Flight!.mkv",
+    "Naruto - Episode 13 - The Chunin Exams, Concluded!.mkv",
+    "Naruto - Episode 14 - Hokage vs Hokage!.mkv",
+    "Naruto - Episode 15 - Naruto's Ninja Handbook!.mkv",
+    "Naruto - Episode 16 - Eulogy.mkv",
+    "Naruto - Episode 17 - Itachi's Power!.mkv",
+    "Naruto - Episode 18 - Tsunade's Decision!.mkv",
+    "Naruto - Episode 19 - The Successor.mkv",
+    "Naruto - Episode 20 - Naruto vs Sasuke!.mkv",
+    "Naruto - Episode 21 - Pursuit.mkv",
+    "Naruto - Episode 22 - Comrades.mkv",
+    "Naruto - Episode 23 - Predicament.mkv",
+    "Naruto - Episode 24 - Unorthodox.mkv",
+    "Naruto - Episode 25 - Itachi And Sasuke, Brothers.mkv",
+    "Naruto - Episode 26 - Awakening.mkv",
+    "Naruto - Episode 27 A - Day of Departure!.mkv",
+    "Naruto - Episode 27 B - Kakashi Chronicles.mkv",
+    "Naruto - Episode 28 - Naruto's Homecoming!.mkv",
+    "Naruto - Episode 29 - Kakashi vs Itachi!.mkv",
+    "Naruto - Episode 30 - Puppet Masters.mkv",
+    "Naruto - Episode 31 - Entrusted Feelings!.mkv",
+    "Naruto - Episode 32 - The Road to Sasuke!.mkv",
+    "Naruto - Episode 33 - Top-Secret Mission!.mkv",
+    "Naruto - Episode 34 - The Reunion!.mkv",
+    "Naruto - Episode 35 - The New Duo!.mkv",
+    "Naruto - Episode 36 - Team 10.mkv",
+    "Naruto - Episode 37 - Shikamaru's Battle!.mkv",
+    "Naruto - Episode 38 - The Fruits of Training!.mkv",
+    "Naruto - Episode 39 - On the Move.mkv",
+    "Naruto - Episode 40 - The Ultimate Art!.mkv",
+    "Naruto - Episode 41 - Jiraiya's Choice!.mkv",
+    "Naruto - Episode 42 - The Secret of the Mangekyo!.mkv",
+    "Naruto - Episode 43 - The One Who Knows the Truth.mkv",
+    "Naruto - Episode 44 - Inheriting Sage Jutsu!.mkv",
+    "Naruto - Episode 45 - Leaf Battlefield.mkv",
+    "Naruto - Episode 46 - Naruto Returns!.mkv",
+    "Naruto - Episode 47 - The Broken Seal!.mkv",
+    "Naruto - Episode 48 - The Cheering Village!.mp4",
+    "Naruto - Episode 49 - The Five Kage Summit Commences!.mkv",
+    "Naruto - Episode 50 - Water Prison Death Match.mkv",
+    "Naruto - Episode 51 - Sasuke vs Danzo!.mp4",
+    "Naruto - Episode 52 - Team 7, Together Again!.mkv",
+    "Naruto - Episode 53 - Naruto's Birth.mp4",
+    "Naruto - Episode 54 - Bridge To Peace.mkv",
+    "Naruto - Episode 55 - The Great War Begins.mkv",
+    "Naruto - Episode 56 - Team Asuma's Reunion!.mkv",
+    "Naruto - Episode 57 - Naruto Heads to the Battlefield!.mkv",
+    "Naruto - Episode 58 - Naruto vs Itachi!.mkv",
+    "Naruto - Episode 59 - The Five Kage, Assembled!.mkv",
+    "Naruto - Episode 60 - Kurama!.mp4",
+    "Naruto - Episode 61 - Brothers, United!.mp4",
+    "Naruto - Episode 62 - The Crack.mkv",
+    "Naruto - Episode 63 - World of Dreams.mkv",
+    "Naruto - Episode 64 - Ten Tails.mkv",
+    "Naruto - Episode 65 - Hashirama and Madara.mkv",
+    "Naruto - Episode 66 - A New Three-Way Deadlock!.mkv",
+    "Naruto - Episode 67 - Breakthrough.mkv",
+    "Naruto - Episode 68 - Naruto's Path.mkv",
+    "Naruto - Episode 69 - The Start of a Crimson Spring.mkv",
+    "Naruto - Episode 70 - Naruto and the Sage of Six Paths.mkv",
+    "Naruto - Episode 71 - I Love You.mkv",
+    "Naruto - Episode 72 - Naruto Uzumaki!.mkv",
+    "Naruto the Movie 7 - The Last (2014) [BD_1080p Hi10P 5.1 AAC].mkv",
+    "Omake - Kakashi Sensei's Real Face!.mp4",
+    "Readme.txt",
+    "Scroll of Wind - The Real True Face...!!.mp4",
+    "Itachi Shinden Part 1 - Book of Bright Light.mkv",
+    "Itachi Shinden Part 2 - Book of Dark Night.mkv"
+  ],
   "episodes": {
     "naruto_kai:1": {
-      "fileIdx": 2
-    },
-    "naruto_kai:2": {
-      "fileIdx": 3
-    },
-    "naruto_kai:3": {
-      "fileIdx": 4
-    },
-    "naruto_kai:4": {
-      "fileIdx": 5
-    },
-    "naruto_kai:5": {
-      "fileIdx": 6
-    },
-    "naruto_kai:6": {
-      "fileIdx": 7
-    },
-    "naruto_kai:7": {
-      "fileIdx": 8
-    },
-    "naruto_kai:8": {
-      "fileIdx": 9
-    },
-    "naruto_kai:9": {
-      "fileIdx": 10
-    },
-    "naruto_kai:10": {
-      "fileIdx": 11
-    },
-    "naruto_kai:11": {
-      "fileIdx": 12
-    },
-    "naruto_kai:12": {
-      "fileIdx": 13
-    },
-    "naruto_kai:13": {
-      "fileIdx": 14
-    },
-    "naruto_kai:14": {
-      "fileIdx": 15
-    },
-    "naruto_kai:15": {
-      "fileIdx": 16
-    },
-    "naruto_kai:16": {
-      "fileIdx": 17
-    },
-    "naruto_kai:17": {
-      "fileIdx": 18
-    },
-    "naruto_kai:18": {
-      "fileIdx": 19
-    },
-    "naruto_kai:19": {
-      "fileIdx": 20
-    },
-    "naruto_kai:20": {
-      "fileIdx": 21
-    },
-    "naruto_kai:21": {
-      "fileIdx": 22
-    },
-    "naruto_kai:22": {
-      "fileIdx": 23
-    },
-    "naruto_kai:23": {
-      "fileIdx": 24
-    },
-    "naruto_kai:24": {
-      "fileIdx": 25
-    },
-    "naruto_kai:25": {
-      "fileIdx": 26
-    },
-    "naruto_kai:26": {
-      "fileIdx": 27
-    },
-    "naruto_kai:27a": {
-      "fileIdx": 28
-    },
-    "naruto_kai:27b": {
-      "fileIdx": 29
-    },
-    "naruto_kai:28": {
-      "fileIdx": 30
-    },
-    "naruto_kai:29": {
-      "fileIdx": 31
-    },
-    "naruto_kai:30": {
-      "fileIdx": 32
-    },
-    "naruto_kai:31": {
-      "fileIdx": 33
-    },
-    "naruto_kai:32": {
-      "fileIdx": 34
-    },
-    "naruto_kai:33": {
-      "fileIdx": 35
-    },
-    "naruto_kai:34": {
-      "fileIdx": 36
-    },
-    "naruto_kai:35": {
-      "fileIdx": 37
-    },
-    "naruto_kai:36": {
-      "fileIdx": 38
-    },
-    "naruto_kai:37": {
-      "fileIdx": 39
-    },
-    "naruto_kai:38": {
-      "fileIdx": 40
-    },
-    "naruto_kai:39": {
-      "fileIdx": 41
-    },
-    "naruto_kai:40": {
-      "fileIdx": 42
-    },
-    "naruto_kai:41": {
-      "fileIdx": 43
-    },
-    "naruto_kai:42": {
-      "fileIdx": 44
-    },
-    "naruto_kai:43": {
-      "fileIdx": 45
-    },
-    "naruto_kai:44": {
-      "fileIdx": 46
-    },
-    "naruto_kai:45": {
-      "fileIdx": 47
-    },
-    "naruto_kai:46": {
-      "fileIdx": 48
-    },
-    "naruto_kai:47": {
-      "fileIdx": 49
-    },
-    "naruto_kai:48": {
-      "fileIdx": 50
-    },
-    "naruto_kai:49": {
-      "fileIdx": 51
-    },
-    "naruto_kai:50": {
-      "fileIdx": 52
-    },
-    "naruto_kai:51": {
-      "fileIdx": 53
-    },
-    "naruto_kai:52": {
-      "fileIdx": 54
-    },
-    "naruto_kai:53": {
-      "fileIdx": 55
-    },
-    "naruto_kai:54": {
-      "fileIdx": 56
-    },
-    "naruto_kai:55": {
-      "fileIdx": 57
-    },
-    "naruto_kai:56": {
-      "fileIdx": 58
-    },
-    "naruto_kai:57": {
-      "fileIdx": 59
-    },
-    "naruto_kai:58": {
-      "fileIdx": 60
-    },
-    "naruto_kai:59": {
-      "fileIdx": 61
-    },
-    "naruto_kai:60": {
-      "fileIdx": 62
-    },
-    "naruto_kai:61": {
-      "fileIdx": 63
-    },
-    "naruto_kai:62": {
-      "fileIdx": 64
-    },
-    "naruto_kai:63": {
-      "fileIdx": 65
-    },
-    "naruto_kai:64": {
-      "fileIdx": 66
-    },
-    "naruto_kai:65": {
-      "fileIdx": 67
-    },
-    "naruto_kai:66": {
-      "fileIdx": 68
-    },
-    "naruto_kai:67": {
-      "fileIdx": 69
-    },
-    "naruto_kai:68": {
-      "fileIdx": 70
-    },
-    "naruto_kai:69": {
-      "fileIdx": 71
-    },
-    "naruto_kai:70": {
-      "fileIdx": 72
-    },
-    "naruto_kai:71": {
-      "fileIdx": 73
-    },
-    "naruto_kai:72": {
-      "fileIdx": 74
-    },
-    "naruto_kai:shinden_1": {
       "fileIdx": 0
     },
-    "naruto_kai:shinden_2": {
+    "naruto_kai:2": {
       "fileIdx": 1
     },
+    "naruto_kai:3": {
+      "fileIdx": 2
+    },
+    "naruto_kai:4": {
+      "fileIdx": 3
+    },
+    "naruto_kai:5": {
+      "fileIdx": 4
+    },
+    "naruto_kai:6": {
+      "fileIdx": 5
+    },
+    "naruto_kai:7": {
+      "fileIdx": 6
+    },
+    "naruto_kai:8": {
+      "fileIdx": 7
+    },
+    "naruto_kai:9": {
+      "fileIdx": 8
+    },
+    "naruto_kai:10": {
+      "fileIdx": 9
+    },
+    "naruto_kai:11": {
+      "fileIdx": 10
+    },
+    "naruto_kai:12": {
+      "fileIdx": 11
+    },
+    "naruto_kai:13": {
+      "fileIdx": 12
+    },
+    "naruto_kai:14": {
+      "fileIdx": 13
+    },
+    "naruto_kai:15": {
+      "fileIdx": 14
+    },
+    "naruto_kai:16": {
+      "fileIdx": 15
+    },
+    "naruto_kai:17": {
+      "fileIdx": 16
+    },
+    "naruto_kai:18": {
+      "fileIdx": 17
+    },
+    "naruto_kai:19": {
+      "fileIdx": 18
+    },
+    "naruto_kai:20": {
+      "fileIdx": 19
+    },
+    "naruto_kai:21": {
+      "fileIdx": 20
+    },
+    "naruto_kai:22": {
+      "fileIdx": 21
+    },
+    "naruto_kai:23": {
+      "fileIdx": 22
+    },
+    "naruto_kai:24": {
+      "fileIdx": 23
+    },
+    "naruto_kai:25": {
+      "fileIdx": 24
+    },
+    "naruto_kai:26": {
+      "fileIdx": 25
+    },
+    "naruto_kai:27a": {
+      "fileIdx": 26
+    },
+    "naruto_kai:27b": {
+      "fileIdx": 27
+    },
+    "naruto_kai:28": {
+      "fileIdx": 28
+    },
+    "naruto_kai:29": {
+      "fileIdx": 29
+    },
+    "naruto_kai:30": {
+      "fileIdx": 30
+    },
+    "naruto_kai:31": {
+      "fileIdx": 31
+    },
+    "naruto_kai:32": {
+      "fileIdx": 32
+    },
+    "naruto_kai:33": {
+      "fileIdx": 33
+    },
+    "naruto_kai:34": {
+      "fileIdx": 34
+    },
+    "naruto_kai:35": {
+      "fileIdx": 35
+    },
+    "naruto_kai:36": {
+      "fileIdx": 36
+    },
+    "naruto_kai:37": {
+      "fileIdx": 37
+    },
+    "naruto_kai:38": {
+      "fileIdx": 38
+    },
+    "naruto_kai:39": {
+      "fileIdx": 39
+    },
+    "naruto_kai:40": {
+      "fileIdx": 40
+    },
+    "naruto_kai:41": {
+      "fileIdx": 41
+    },
+    "naruto_kai:42": {
+      "fileIdx": 42
+    },
+    "naruto_kai:43": {
+      "fileIdx": 43
+    },
+    "naruto_kai:44": {
+      "fileIdx": 44
+    },
+    "naruto_kai:45": {
+      "fileIdx": 45
+    },
+    "naruto_kai:46": {
+      "fileIdx": 46
+    },
+    "naruto_kai:47": {
+      "fileIdx": 47
+    },
+    "naruto_kai:48": {
+      "fileIdx": 48
+    },
+    "naruto_kai:49": {
+      "fileIdx": 49
+    },
+    "naruto_kai:50": {
+      "fileIdx": 50
+    },
+    "naruto_kai:51": {
+      "fileIdx": 51
+    },
+    "naruto_kai:52": {
+      "fileIdx": 52
+    },
+    "naruto_kai:53": {
+      "fileIdx": 53
+    },
+    "naruto_kai:54": {
+      "fileIdx": 54
+    },
+    "naruto_kai:55": {
+      "fileIdx": 55
+    },
+    "naruto_kai:56": {
+      "fileIdx": 56
+    },
+    "naruto_kai:57": {
+      "fileIdx": 57
+    },
+    "naruto_kai:58": {
+      "fileIdx": 58
+    },
+    "naruto_kai:59": {
+      "fileIdx": 59
+    },
+    "naruto_kai:60": {
+      "fileIdx": 60
+    },
+    "naruto_kai:61": {
+      "fileIdx": 61
+    },
+    "naruto_kai:62": {
+      "fileIdx": 62
+    },
+    "naruto_kai:63": {
+      "fileIdx": 63
+    },
+    "naruto_kai:64": {
+      "fileIdx": 64
+    },
+    "naruto_kai:65": {
+      "fileIdx": 65
+    },
+    "naruto_kai:66": {
+      "fileIdx": 66
+    },
+    "naruto_kai:67": {
+      "fileIdx": 67
+    },
+    "naruto_kai:68": {
+      "fileIdx": 68
+    },
+    "naruto_kai:69": {
+      "fileIdx": 69
+    },
+    "naruto_kai:70": {
+      "fileIdx": 70
+    },
+    "naruto_kai:71": {
+      "fileIdx": 71
+    },
+    "naruto_kai:72": {
+      "fileIdx": 72
+    },
+    "naruto_kai:shinden_1": {
+      "fileIdx": 77
+    },
+    "naruto_kai:shinden_2": {
+      "fileIdx": 78
+    },
     "naruto_kai:movie_the_last": {
-      "fileIdx": 75
+      "fileIdx": 73
     },
     "naruto_kai:omake": {
-      "fileIdx": 76
+      "fileIdx": 74
     },
     "naruto_kai:scroll_of_wind": {
-      "fileIdx": 78
+      "fileIdx": 76
     }
   }
 }
