@@ -43,7 +43,7 @@ export const SOURCES = [
     name: 'Naruto Kai',
     episodePrefix: 'naruto_kai',
     catalogId: NARUTO_KAI.catalogId,
-    catalogName: NARUTO_KAI.catalog.name,
+    catalogName: 'Naruto Kai',
     metaId: NARUTO_KAI.meta.id,
     metaPrefix: 'naruto_kai',
     catalog: () => jsonResponse(NARUTO_KAI_CATALOG),
