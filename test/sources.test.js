@@ -82,6 +82,13 @@ describe('Naruto Kai (vendored)', () => {
     expect(streams[0].url).toBe(`${BASE}/${KEY}/resolve/${NARUTO_KAI.infoHash}/${NARUTO_KAI.episodes['naruto_kai:1'].fileIdx}`);
   });
 
+  it('resolves a percent-encoded id the way Stremio sends it', async () => {
+    const res = await get('/stream/series/naruto_kai%3A28.json');
+    const { streams } = await res.json();
+    expect(streams).toHaveLength(1);
+    expect(streams[0].url).toContain(`/resolve/${NARUTO_KAI.infoHash}/${NARUTO_KAI.episodes['naruto_kai:28'].fileIdx}`);
+  });
+
   it('returns empty streams for an unknown naruto_kai episode', async () => {
     const res = await handleStream('naruto_kai:999', KEY, new Request(`${BASE}/${KEY}/stream/series/naruto_kai:999.json`), ctx);
     expect(await res.json()).toEqual({ streams: [] });

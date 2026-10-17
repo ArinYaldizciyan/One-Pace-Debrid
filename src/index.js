@@ -68,6 +68,16 @@ export const SOURCES = [
   },
 ];
 
+// Stremio percent-encodes ids in the request path (naruto_kai%3A28), and
+// URL.pathname leaves that encoding in place. Decode before any lookup.
+function safeDecode(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 export function sourceForEpisode(episodeId) {
   return SOURCES.find(s => episodeId.startsWith(s.episodePrefix));
 }
@@ -240,19 +250,19 @@ export default {
 
     const catalogMatch = subPath.match(/^\/catalog\/series\/([^/]+)\.json$/);
     if (catalogMatch) {
-      const source = SOURCES.find(s => s.catalogId === catalogMatch[1]);
+      const source = SOURCES.find(s => s.catalogId === safeDecode(catalogMatch[1]));
       if (source) return source.catalog(ctx);
     }
 
     const metaMatch = subPath.match(/^\/meta\/series\/([^/]+)\.json$/);
     if (metaMatch) {
-      const source = SOURCES.find(s => s.metaId === metaMatch[1]);
+      const source = SOURCES.find(s => s.metaId === safeDecode(metaMatch[1]));
       if (source) return source.meta(ctx);
     }
 
     const streamMatch = subPath.match(/^\/stream\/series\/(.+)\.json$/);
     if (streamMatch) {
-      return handleStream(streamMatch[1], apiKey, request, ctx);
+      return handleStream(safeDecode(streamMatch[1]), apiKey, request, ctx);
     }
 
     const resolveMatch = subPath.match(/^\/resolve\/([a-f0-9]+)\/(\d+)$/i);
