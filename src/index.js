@@ -1,3 +1,5 @@
+import NARUTO_KAI from './data/naruto-kai.json';
+
 const GITHUB_BASE = 'https://raw.githubusercontent.com/fedew04/OnePaceStremio/main';
 const TORBOX_API = 'https://api.torbox.app/v1';
 const VIDEO_EXTS = ['.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.webm'];
@@ -10,30 +12,84 @@ const ANIME_TRACKERS = [
   'http://t.nyaatracker.com:80/announce',
 ];
 
-const MANIFEST = {
-  id: 'com.onepace.torbox',
-  version: '1.0.0',
-  name: 'One Pace (Torbox)',
-  description: 'One Pace fan edit with Torbox HTTP streaming.',
-  logo: 'https://i.pinimg.com/originals/4c/46/ee/4c46ee47e0710a6d928454f68fc4ee17.png',
-  resources: [
-    'catalog',
-    { name: 'meta', types: ['series'], idPrefixes: ['pp'] },
-    'stream'
-  ],
-  types: ['series'],
-  catalogs: [{
-    type: 'series',
-    id: 'seriesCatalog',
-    name: 'One Pace',
-    extra: [{ name: 'search', isRequired: false }]
-  }]
-};
-
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': '*'
+};
+
+// --- Sources ---
+//
+// Each fan edit the addon serves. A source answers catalog + meta with a
+// Response and maps an episode id to { infoHash, fileIdx } (or null); the
+// Torbox resolve path below is shared and doesn't care which show it is.
+//
+// One Pace is still being released, so it is proxied live from GitHub.
+// Naruto Kai is finished against one fixed torrent, so its data is vendored
+// (see scripts/import-naruto-kai.mjs) and served from memory.
+
+const NARUTO_KAI_META = JSON.stringify({
+  meta: {
+    ...NARUTO_KAI.meta,
+    videos: NARUTO_KAI.meta.videos.map(v => ({ ...NARUTO_KAI.defaults, ...v })),
+  }
+});
+const NARUTO_KAI_CATALOG = JSON.stringify({ metas: [NARUTO_KAI.catalog] });
+
+const jsonResponse = (body) => new Response(body, { headers: JSON_HEADERS });
+
+export const SOURCES = [
+  {
+    name: 'Naruto Kai',
+    episodePrefix: 'naruto_kai',
+    catalogId: NARUTO_KAI.catalogId,
+    catalogName: NARUTO_KAI.catalog.name,
+    metaId: NARUTO_KAI.meta.id,
+    metaPrefix: 'naruto_kai',
+    catalog: () => jsonResponse(NARUTO_KAI_CATALOG),
+    meta: () => jsonResponse(NARUTO_KAI_META),
+    stream: (episodeId) => {
+      const ep = NARUTO_KAI.episodes[episodeId];
+      return ep ? { infoHash: ep.infoHash || NARUTO_KAI.infoHash, fileIdx: ep.fileIdx } : null;
+    },
+  },
+  {
+    // Default: One Pace episode ids (AL_1, RO_2, ...) carry no shared prefix.
+    name: 'One Pace',
+    episodePrefix: '',
+    catalogId: 'seriesCatalog',
+    catalogName: 'One Pace',
+    catalogExtra: [{ name: 'search', isRequired: false }],
+    metaId: 'pp_onepace',
+    metaPrefix: 'pp',
+    catalog: (ctx) => githubProxy('catalog/series/seriesCatalog.json', ctx),
+    meta: (ctx) => githubProxy('meta/series/pp_onepace.json', ctx),
+    stream: (episodeId, ctx) => githubStream(episodeId, ctx),
+  },
+];
+
+export function sourceForEpisode(episodeId) {
+  return SOURCES.find(s => episodeId.startsWith(s.episodePrefix));
+}
+
+export const MANIFEST = {
+  id: 'com.onepace.torbox',
+  version: '1.1.0',
+  name: 'One Pace (Torbox)',
+  description: 'One Pace and Naruto Kai fan edits with Torbox HTTP streaming.',
+  logo: 'https://i.pinimg.com/originals/4c/46/ee/4c46ee47e0710a6d928454f68fc4ee17.png',
+  resources: [
+    'catalog',
+    { name: 'meta', types: ['series'], idPrefixes: SOURCES.map(s => s.metaPrefix) },
+    'stream'
+  ],
+  types: ['series'],
+  catalogs: SOURCES.map(s => ({
+    type: 'series',
+    id: s.catalogId,
+    name: s.catalogName,
+    ...(s.catalogExtra ? { extra: s.catalogExtra } : {}),
+  }))
 };
 
 const CONFIG_PAGE = `<!DOCTYPE html>
@@ -182,12 +238,16 @@ export default {
       return new Response(JSON.stringify(MANIFEST), { headers: JSON_HEADERS });
     }
 
-    if (subPath === '/catalog/series/seriesCatalog.json') {
-      return githubProxy('catalog/series/seriesCatalog.json', ctx);
+    const catalogMatch = subPath.match(/^\/catalog\/series\/([^/]+)\.json$/);
+    if (catalogMatch) {
+      const source = SOURCES.find(s => s.catalogId === catalogMatch[1]);
+      if (source) return source.catalog(ctx);
     }
 
-    if (subPath === '/meta/series/pp_onepace.json') {
-      return githubProxy('meta/series/pp_onepace.json', ctx);
+    const metaMatch = subPath.match(/^\/meta\/series\/([^/]+)\.json$/);
+    if (metaMatch) {
+      const source = SOURCES.find(s => s.metaId === metaMatch[1]);
+      if (source) return source.meta(ctx);
     }
 
     const streamMatch = subPath.match(/^\/stream\/series\/(.+)\.json$/);
@@ -234,7 +294,9 @@ function addCorsHeaders(response) {
 
 // --- Stream Handler ---
 
-async function handleStream(episodeId, apiKey, request, ctx) {
+// Fetches the One Pace stream file from GitHub (edge-cached). Returns
+// { infoHash, fileIdx } or null when the episode has no stream file.
+async function githubStream(episodeId, ctx) {
   const url = `${GITHUB_BASE}/stream/series/${episodeId}.json`;
   const cache = caches.default;
   let streamData;
@@ -248,7 +310,7 @@ async function handleStream(episodeId, apiKey, request, ctx) {
     const response = await fetch(url);
     if (!response.ok) {
       console.log(`STREAM: episodeId=${episodeId} github_status=${response.status} - returning empty streams`);
-      return new Response(JSON.stringify({ streams: [] }), { headers: JSON_HEADERS });
+      return null;
     }
     streamData = await response.json();
     ctx.waitUntil(cache.put(url, new Response(JSON.stringify(streamData), {
@@ -257,13 +319,26 @@ async function handleStream(episodeId, apiKey, request, ctx) {
   }
 
   const { infoHash, fileIdx = 0 } = streamData.streams[0];
+  console.log(`STREAM: episodeId=${episodeId} github_cached=${fromCache}`);
+  return { infoHash, fileIdx };
+}
+
+export async function handleStream(episodeId, apiKey, request, ctx) {
+  const source = sourceForEpisode(episodeId);
+  const stream = await source.stream(episodeId, ctx);
+  if (!stream) {
+    console.log(`STREAM: episodeId=${episodeId} source=${source.name} - no stream, returning empty streams`);
+    return new Response(JSON.stringify({ streams: [] }), { headers: JSON_HEADERS });
+  }
+
+  const { infoHash, fileIdx } = stream;
   const host = new URL(request.url).origin;
 
-  console.log(`STREAM: episodeId=${episodeId} cached=${fromCache} infoHash=${infoHash} fileIdx=${fileIdx} host=${host}`);
+  console.log(`STREAM: episodeId=${episodeId} source=${source.name} infoHash=${infoHash} fileIdx=${fileIdx} host=${host}`);
 
   return new Response(JSON.stringify({
     streams: [{
-      name: 'One Pace\n[Torbox]',
+      name: `${source.name}\n[Torbox]`,
       title: episodeId,
       url: `${host}/${apiKey}/resolve/${infoHash}/${fileIdx}`
     }]
